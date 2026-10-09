@@ -1,0 +1,42 @@
+# Git 版本控制插件（内置）。
+#
+# 能力申请只有四条，**每一条都要有实际用到的地方**——
+# 申请了不用的能力是在扩大攻击面而不换任何功能。
+#
+# ⚠️ 这里曾经申请过 `document.read`（注释写着"提交信息默认取文档标题"）和
+# `fs.read`（"将来做逐文件 diff 用"）。2026-09-24 核对时两条都没被用过：
+# 不是"暂时没写"，是 main.lua 里根本读不到 `nota.document` 也读不到 `nota.fs`。
+# 删掉了。**要加回来的时候，请连"用在哪一行"一起写清楚**——
+# 上面那句话是针对这种情况说的，不是装饰。
+#
+# 为什么没有 `fs.write`：这个插件只让 git 自己去改工作区，不直接写文件。
+# 哪天要做"从 git 恢复某个版本到工作区"，那时再加。
+#
+# 除了能力表，这个插件还会 `nota.event.emit("git:status", …)` 广播一份改动清单。
+# 事件不是能力（谁都能收发），但它是**跨插件的约定**：改这个事件的字段形状
+# 要先看 `docs/11` §插件之间怎么协作，那边记着谁在听。
+
+[plugin]
+id          = "nota.git"
+name        = "Git version control"
+version     = "0.1.0"
+api         = 2
+
+description = "See changes, compare diffs and commit. Uses the system git command and respects your gitconfig and hooks."
+license     = "BSD-2-Clause"
+authors     = ["Nota contributors"]
+entry       = "main.lua"
+
+# 这个插件认哪些界面语言。一写就**参与语言协商**：应用语言在这张清单里 → 用
+# `lang/<那一份>.toml`；不在 → **用英语**，并在插件栏/面板上说明「此插件不支持
+# 您的语言」。细节见 `src-tauri/src/lua/api/i18n.rs` 文件头。
+# ⚠️ 必须含 `en`（没命中时的兜底，缺了宿主判这份清单不合法）；清单里的语言不要求
+# 有对应文件（没有就是"这个语言下全是原文"）。不写 `langs` 就不协商。
+langs = ["zh-CN", "en"]
+
+capabilities = [
+  "process.git",     # 本插件存在的理由：status / diff / add / commit
+  "ui.notify",       # 提交成功、失败、以及"这里不是 git 仓库"都要说一声
+  "ui.panel",        # 右侧那块面板：分支名 + 改动列表 + 提交按钮
+  "ui.menu",         # 「插件」菜单里的「提交…」与「刷新改动」
+]

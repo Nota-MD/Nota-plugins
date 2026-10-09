@@ -1,0 +1,91 @@
+# 写作统计插件（内置）。原名「写作心电图」，2026-09-27 用户要求改名。
+#
+# ⚠️⚠️ **`id` 是 `nota.stats`，2026-09-27 跟着改名一起换了**（原来是 `nota.heartbeat`）。
+#    id 是**存储键**不是名字，换它等于换一本账：`paths::plugin_data_dir()` 按 id 拼路径，
+#    `plugins.toml` 的启用状态、`trusted-keys.toml` 的来路记录也都按 id 索引
+#    （`plugin/installed.rs`），新 id 名下三样都没有。
+#    ⚠️ **这一次不必搬家**：用户 2026-09-27 明确说「现在还没有用户」。真要搬的话得加一条
+#    一次性搬家（数据目录 ＋ 那条"已经打开过"的记录——release 档下没记过是**关**的，
+#    `Installed::没记过时开不开`），那是另一件事，别顺手做。
+#
+# 能力四条，**每一条都有实际用到的地方**：
+#
+#   document.read  —— 数当前文档的**字/词数**（`nota.document.stats().words`：
+#                     中文一字算 1 ＋ 连续英文/数字算 1 个词，2026-09-27 起）。
+#                     那是这块面板唯一的原料，一个字节都不改文档。
+#   ui.panel       —— 右侧那一页：大数字 ＋ 曲线 ＋ 开始/暂停/终止那几颗按钮。
+#   data.own       —— 「今日那本账」的落点（`nota.data`，2026-09-27 加）。
+#                     落点固定在 `$XDG_DATA_HOME/nota/plugin-data/<插件 id>/`，
+#                     拿不到别的插件的、更拿不到用户的文档。
+#   settings.own   —— 窗口秒数那一格（2026-10-04 加）。值由**宿主**写进
+#                     `plugin-settings/nota.stats.toml`（见下面能力表那一行的说明）。
+#
+# ⚠️ **没有** `ui.menu`：这个插件不往菜单里放东西。它**有**动作（「开始记录」
+#    「暂停」「继续」「终止」「再来一轮」「制作分享图」），但那几颗按钮都长在
+#    **面板里**（`kind = "buttons"` ＋ `nota.command.register`），没有一条进菜单。
+# ⚠️ **没有** `fs.*` / `network.*`：它不碰工作区、更不出网。
+# ⚠️ 「统计打字速度」这件事听起来像要读键盘，其实不是——数的是**文档自己的
+#    长度**变化（`main.lua` 顶上那段写着这件事）。所以它也不需要任何
+#    系统权限，跟强制专注模式那种"看窗口焦点"的完全是两回事。
+#
+# ⚠️ 落盘的**只有"今日"那一本**（`days.txt`，纯文本，一天一行头、一分钟一行）。
+#    一轮的账**仍然只在内存里**：一轮是"刚才那场运动"，重启之后还在才是怪的
+#    （理由在 `main.lua` 顶上"账上记的不止这一轮"那一节）。
+#    ⚠️ 用户删了那个文件**不会坏事**：只是今天的账从头开始（同一节写着）。
+#
+# ⚠️ 这个插件是**面板心跳**的第一个用户：`register_panel{ live = true }`
+#    让宿主每秒喊它一次"该重拉了"。机制与代价在 `src-tauri/src/heartbeat.rs`
+#    顶上那段，以及 `docs/12` §4.7a。
+
+[plugin]
+id          = "nota.stats"
+name        = "Writing Stats"
+version     = "0.5.0"
+api         = 2
+
+description = "Track a writing session like a sports watch: start, pause, stop. A big number shows words per minute, with a curve below that rises and falls over time. When you are done you can turn the session (or the day) into a share card."
+license     = "BSD-2-Clause"
+authors     = ["Nota contributors"]
+entry       = "main.lua"
+
+# 这个插件认哪些界面语言。规则同别的内置插件（`docs/11` §2.4）。
+# ⚠️ 必须含 `en`（没命中时的兜底，缺了宿主判这份清单不合法）。
+langs = ["zh-CN", "en"]
+
+capabilities = [
+  "document.read",   # 数字/词数（nota.document.stats().words）
+  "ui.panel",        # 右侧那一页：数字 ＋ 曲线
+  "data.own",        # 今日那本账（nota.data，落在插件自己的数据目录里）
+  # ⚠️ 2026-10-04 加的第四条：**「设置 → 拓展」上那根滑杆**。
+  #    用户在那一页拖的值由**宿主**写进这个插件自己的设置文件
+  #    （`plugin-settings/nota.stats.toml`）——宿主去写一个文件，
+  #    当然得先有这个能力（同 `process.devserver` 那条判据：
+  #    能力放行的是"这件事"，不是"这类事"）。
+  #    ⚠️ 声明 `[[settings]]` 而没申请它，清单直接判不合法。
+  "settings.own",    # 窗口秒数那根滑杆（nota.settings ＋ 下面的 [[settings]]）
+]
+
+# ── 请宿主画的那一格设置（2026-10-04 加）────────────────────────────────
+#
+# 用户 2026-10-04：「统计打字速度，不要统计全局的，应该统计某一个德尔塔t内的
+# 打字数量。这个德尔塔t可以在拓展的设置页面更改，默认为5秒。应该是一个托条，
+# 从1秒到1分钟可选。」
+#
+# 于是那个"最近一分钟"的滑动窗口改成了这一格；滑杆由**宿主**画在
+# 「设置 → 拓展」这一页上（形状的规矩见 `docs/11`「给拓展做一格设置」）。
+#
+# ⚠️ `label` / `help` 写**英语原文**（清单是英语的），译文进 `lang/zh-CN.toml`，
+#    键就是下面这两句原文——与 `name` / `description` 同一条规矩。
+# ⚠️ 值落在插件自己的设置文件里，插件用 `nota.settings.get("window_seconds")` 读
+#    （`main.lua::窗口毫秒`）。**默认值两边都有一份**（这里是 5，插件里也夹一次）：
+#    清单里的那份是给界面画的，插件里那份是"文件被手改坏了"时的兜底。
+[[settings]]
+key     = "window_seconds"
+kind    = "range"
+label   = "Speed window"
+help    = "How many seconds the big number looks back over. 1–60 seconds; 5 by default."
+min     = 1
+max     = 60
+default = 5
+step    = 1
+unit    = "s"

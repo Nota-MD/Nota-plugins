@@ -1,0 +1,94 @@
+# Slidev 演示插件（内置）。
+#
+# 2026-09-25 从程序本体里拆出来的。拆的判据是用户那句「几个不是所有人能用到的
+# 功能放到拓展里面，然后如果删了拓展的话，那这项功能将完全全不复存在」——
+# Slidev 要 Node、要 npm 装几百 MB，用 Nota 写文档的人里绝大多数不写幻灯片。
+# **删掉这个目录，「预览」这件事在 Nota 里就一点痕迹都不剩**：菜单里没有、
+# 面板里没有、宿主那边连一句话都没有（剩下的是 `process.devserver` 那套通用机制，
+# 它自己不知道 Slidev 是什么，见 `src/devserver.rs` 文件头）。
+#
+# 能力申请六条，**每一条都要有实际用到的地方**——申请了不用的能力是扩大
+# 攻击面而不换任何功能。
+#
+# ⚠️ `ui.open_url` 是 2026-09-26 补的，**它不是「用浏览器打开预览」那条路**：
+# 那条走 `nota.devserver.open_in_browser`，打开的是**本插件自己这场会话**的地址，
+# 属于 `process.devserver` 的一部分（两条路的判据之别见
+# `src-tauri/src/lua/api/devserver.rs` 文件头那一节）。
+# 这一条是为**「这台机器没装 Slidev」那一档**申请的：用户要的是"没装就导航到
+# 官网的安装指南"，而拆成插件时那条链接顺手一起没了（`docs/07` BUG-35）。
+# 它只能去 `https://sli.dev/guide/` 这一个地址（那道闸只放行 https）。
+
+[plugin]
+id          = "nota.slidev"
+name        = "Slidev Slides"
+version     = "0.1.0"
+api         = 2
+
+description = "Play the current Markdown as slides. Runs your local Slidev and embeds the preview in the side panel."
+license     = "BSD-2-Clause"
+authors     = ["Nota contributors"]
+entry       = "main.lua"
+
+# ── 这个插件认哪些界面语言 ────────────────────────────────────────────────
+#
+# `langs` 一写，这个插件就**参与语言协商**（`src-tauri/src/lua/api/i18n.rs`）：
+# 应用语言在这张清单里 → 用 `lang/<那一份>.toml`；不在 → **用英语**，并在插件栏
+# 和面板上说明「此插件不支持您的语言」。
+#
+# ⚠️ **必须含 `en`**：它是没命中时的兜底，缺了宿主直接判这份清单不合法。
+# ⚠️ 清单里写着的语言**不要求**有对应的文件——没有就是"这个语言下全是原文"，
+# 不报错、也不影响"支持的判定"（判据只看这张清单，见上面那个文件头）。
+# ⚠️ **不写 `langs` 就不协商**：插件栏里不会出现那句话，插件一律显示 `main.lua`
+# 里写的原文（第三方插件按自己的意思来，这是留给它们的自由）。
+langs = ["zh-CN", "en"]
+
+capabilities = [
+  "process.devserver",  # 本插件存在的理由：起 Slidev、把入口写成当前正文、嵌进面板
+  "document.read",      # 面板上要显示"正在预览哪一份"、"这份还没存过盘"，以及读 frontmatter 的 `theme:`
+  "ui.notify",          # 起失败 / 超时 / 没装：都要说一声，不能只在面板里闷着
+  "ui.panel",           # 右侧那块面板：状态 + 预览画面 + 按钮
+  "ui.menu",            # 「插件」菜单里的「开始预览」/「停止预览」
+  "ui.open_url",        # 「没装」那两档上的「去官网看安装指南」→ https://sli.dev/guide/
+]
+
+# ── 开发服务器 ────────────────────────────────────────────────────────────
+#
+# ⚠️ **这里是全套里唯一写死"跑什么"的地方**，而且它随插件一起过签名校验。
+# Lua 那边 `nota.devserver.start` 只收"哪份文档"，交不出第二个程序名——
+# 那正是 `process.devserver` 这个能力的边界（同 `process.git`）。
+
+[devserver]
+# 整条命令写成一句（`split_command` 会按 shell 的规矩拆词），为的是让
+# 面板上"我们问的是哪条命令"那句话跟用户自己在终端敲的一模一样。
+cmd = "npx @slidev/cli"
+# 调试旋钮：`NOTA_SLIDEV_CMD="node /path/to/slidev.js"` 之类能整条换掉 `cmd`
+#（`args` 照样接在后面）。改这个环境变量是排查"是不是 npx 的问题"最快的路。
+cmd_env = "NOTA_SLIDEV_CMD"
+args = ["{entry}", "--port", "{port}", "--no-open"]
+
+# 入口文件名。点开头（宿主另有一条规矩：这类影子文件不该在用户的文件树里显眼）。
+# Slidev 实测认这个名字（2026-09-24，53.0.0）。
+entry = ".nota-slidev-{doc}.md"
+
+# 探"装没装"就是问版本号。
+probe_args = ["--version"]
+
+# ⚠️ **探测不许联网**。它要回答的是"现在这一下能不能跑起来"，不是"npm 上有没有
+# 这个包"——后者一定会去下几百 MB，而用户只是点了一下菜单。
+# `only-if-cached`：装过就命中（实测 1.3 秒），没装过 0.26 秒回一句 ENOTCACHED。
+# 两条路都不碰网络。用环境变量而不是给命令行加 `--offline`，是为了让自定义的
+# `NOTA_SLIDEV_CMD` 也能原样跑。
+probe_env = { npm_config_offline = "true" }
+
+# 项目根的判据。⚠️ 命令在 ≠ 跑得起来：实测（2026-09-24，Slidev 53.0.0）在一个
+# 空目录里起它照样立刻退出，原话是
+# `The theme "@slidev/theme-default" was not found and cannot prompt for installation`。
+# 也就是说门槛是"文档所在目录（或它的某一层父目录）装过主题"。
+# 宿主查的是"根或它的任一层父目录里有没有 `node_modules/@slidev/theme-*`"。
+#
+# ⚠️⚠️ **这一条是粗的，只回答"这里是不是个 Slidev 项目"**。2026-09-26 用户实测
+# 把它不够用这件事撞出来了：项目里装的是 `theme-seriph`（前缀命中 ⇒ 判"能跑"），
+# 而那份文档一个字没写主题 ⇒ Slidev 要的是 `@slidev/theme-default` ⇒ 进程两秒后
+# 退出。**"装的是不是文档要的那一个包"是逐份文档都不一样的**，写不进清单——
+# 它走的是每次调用带上来的 `probe{need=…}`（`main.lua` 的「主题」那一节）。
+project_marker = "node_modules/@slidev/theme-"

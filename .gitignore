@@ -1,0 +1,10 @@
+# 打出来的包（`tools/pack-plugin.py` 的产物）
+plugins/*/dist/
+
+# Python / 编辑器
+__pycache__/
+*.pyc
+*.swp
+*~
+.idea/
+.vscode/

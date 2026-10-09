@@ -1,0 +1,89 @@
+# 「写作统计」插件的中文（简体）文案表。
+#
+# # 这张表怎么来的
+#
+# 键 = **`main.lua` 里 `T("…")` 写下的那句原文**，一字不差（含标点）。查不到
+# 这条键就用原文——所以这份表里**只需要放要翻译的那些**。
+#
+# ⚠️ **主语言是英语**（2026-09-27 用户定的方向，2026-09-28 铺到这一层）：
+# 代码里写的是**英语原文**，中文是**翻译**，在这一份里。英语自己那份
+# （`lang/en.toml`）**没有了**——英语就是原文，一张空表而已。
+#
+# ⚠️ 改了 `main.lua` 里的英语原文 = 改了一个键，这里的对应条目会**静默失效**
+# （表现是那句退回英语，不报错）。`bash tools/i18n-check.sh` 会把废键揪出来。
+#
+# ⚠️ 句子里的 `%s` / `%d` 是占位符，译文里的**个数和顺序必须与原句一致**
+# （走 `string.format`）；真要写一个百分号，写成 `%%`。
+#
+# ⚠️ `name` / `description` 是**保留键**：清单里那两行（插件显示名、列表里那一行
+# 简介）在**本语言**下怎么写。它们不必出现在代码里。⚠️ 清单里写的是英语原文，
+# 所以要给中文用户看的名字与简介，都写在这里。
+# ── 保留键：中文下的显示名与简介 ──────────────────────────────────
+name = "写作统计"
+description = "像运动手表那样记一轮写作：开始、暂停、终止，一个大号数字显示每分钟打了多少字，下面一条随时间起伏的曲线。写完可以做成一张分享图（本轮或者今天）。"
+
+# ── 正文里的那些句子 ────────────────────────────────────────────────
+"Writing Stats" = "写作统计"
+"Can't read this document's length." = "读不到当前文档的字数。"
+"Round average" = "本轮平均速度"
+"words/min" = "字/分钟"
+"Written this round" = "本轮写了"
+"Recorded for" = "记录时长"
+"Peak speed" = "峰值速度"
+"Whole document" = "整份文档"
+# ⚠️ 下面这两条 2026-10-04 加的：一条是**面板小字**里那行（大数字回看多久），
+# 一条是**设置页上那根滑杆**的名字与说明（`plugin.toml` 的 `[[settings]]`）。
+# 滑杆那两条的键是清单里写下的英语原文——与 `name` / `description` 同一条规矩
+# （宿主拿清单里那句原文去这张表里查，查不到就用原文）。两处用的是同一个键，
+# 所以"速度窗口"这个名字在面板和设置页上是同一句话。
+"Speed window" = "速度窗口"
+"last %d s" = "最近 %d 秒"
+"How many seconds the big number looks back over. 1–60 seconds; 5 by default." = "那个大数字往回看多少秒。1–60 秒，默认 5 秒。"
+"Only recorded while this panel is open." = "只在面板开着的时候记录。"
+"Not started yet. Press “Start” and this round will count how much you write, how long it takes, and how fast you go." = "还没开始。按「开始记录」，这一轮写了多少字、用了多久、什么速度，就都算起来了。"
+"Paused. Anything you type now doesn't count toward this round — press “Resume” to continue." = "已暂停。这期间打的字不算进这一轮——按「继续」接着算。"
+"Start recording" = "开始记录"
+"Pause" = "暂停"
+"Stop" = "终止"
+"Resume" = "继续"
+"Start another round" = "再来一轮"
+"%d words" = "%d 字"
+"%d s" = "%d 秒"
+"%d m %d s" = "%d 分 %d 秒"
+"%d words/min" = "%d 字/分钟"
+"Make this round's card" = "制作本轮分享图"
+"Make today's card" = "制作今日分享图"
+"Back" = "返回"
+"The two buttons under the card: save it as a PNG, or copy it to the clipboard." = "卡片下面那两颗按钮：存成 PNG，或者直接复制到剪贴板。"
+"%d-%02d-%02d %02d:%02d" = "%d年%d月%d日 %02d:%02d"
+"words / min" = "字 / 分钟"
+"Today's average" = "今日平均速度"
+"Total" = "总字数"
+"Duration" = "时长"
+"Peak" = "峰值"
+"words" = "字"
+"Written today" = "今日写了"
+"Recorded today" = "今日时长"
+"Today's peak" = "今日峰值"
+"This round you wrote %s words" = "这一轮，你写下了 %s 个字"
+"Today you wrote %s words" = "今天，你写下了 %s 个字"
+"Start" = "开始"
+"End" = "结束"
+"%d min" = "%d 分"
+"%d h" = "%d 小时"
+"Less" = "少"
+"More" = "多"
+"Long-term record" = "长期记录"
+"Total in this window" = "长期总字数"
+"Days with writing" = "有字的天数"
+"days" = "天"
+"Daily average" = "日均"
+"words/day" = "字/天"
+"Busiest day" = "单日最多"
+"The last %d weeks: %d days with writing, %s words" = "最近 %d 周，你在 %d 天里写下了 %s 个字"
+"Make the long-term card" = "制作长期分享图"
+"Can't read today's date, so the long-term ledger can't be drawn." = "拿不到今天的日期，长期那本账画不出来。"
+"Writing record" = "写作记录"
+"This round · %s words · %s" = "本轮 · %s 字 · %s"
+"Today · %d rounds" = "今天 · %d 轮"
+"The last %d weeks · %d days with writing" = "最近 %d 周 · %d 天有字"

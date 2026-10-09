@@ -1,0 +1,71 @@
+# 「Slidev」插件的中文（简体）文案表。
+#
+# # 这张表怎么来的
+#
+# 键 = **`main.lua` 里 `T("…")` 写下的那句原文**，一字不差（含标点）。查不到
+# 这条键就用原文——所以这份表里**只需要放要翻译的那些**。
+#
+# ⚠️ **主语言是英语**（2026-09-27 用户定的方向，2026-09-28 铺到这一层）：
+# 代码里写的是**英语原文**，中文是**翻译**，在这一份里。英语自己那份
+# （`lang/en.toml`）**没有了**——英语就是原文，一张空表而已。
+#
+# ⚠️ 改了 `main.lua` 里的英语原文 = 改了一个键，这里的对应条目会**静默失效**
+# （表现是那句退回英语，不报错）。`bash tools/i18n-check.sh` 会把废键揪出来。
+#
+# ⚠️ 句子里的 `%s` / `%d` 是占位符，译文里的**个数和顺序必须与原句一致**
+# （走 `string.format`）；真要写一个百分号，写成 `%%`。
+#
+# ⚠️ `name` / `description` 是**保留键**：清单里那两行（插件显示名、列表里那一行
+# 简介）在**本语言**下怎么写。它们不必出现在代码里。⚠️ 清单里写的是英语原文，
+# 所以要给中文用户看的名字与简介，都写在这里。
+# ── 保留键：中文下的显示名与简介 ──────────────────────────────────
+name = "Slidev 演示"
+description = "把当前 Markdown 当幻灯片放出来看。走本机的 Slidev，预览嵌在右侧面板里。"
+
+# ── 正文里的那些句子 ────────────────────────────────────────────────
+"Slidev takes the entry file's directory as the project root (relative paths such as `![](./img.png)` rely on it), and a brand-new document has no directory yet. Save it first, then try again." = "Slidev 拿入口文件所在的目录当项目根（`![](./图.png)` 这类相对路径也指望它），新建的文档还没有目录可用。先存一下盘再试。"
+"Slidev%s is installed, but `%s` is not a Slidev project yet." = "Slidev%s 是装了的，但 `%s` 还不是一个 Slidev 项目。"
+"Slidev%s is installed, but this document has not been saved to disk yet." = "Slidev%s 是装了的，但这份文档还没存过盘。"
+"%s · port %d" = "《%s》 · 端口 %d"
+"Last start failed: %s" = "上次启动没成：%s"
+"Theme" = "主题"
+"Theme package" = "主题包"
+"This document names no theme, and the default theme `%s` Slidev asks for is not installed." = "这份文档没写主题，Slidev 要的默认主题 `%s` 没装。"
+"The theme `%s` this document asks for is not installed." = "这份文档要的主题 `%s` 没装。"
+"Looked for `%s` (and in every parent directory). Even a document that names no theme makes Slidev look for that default theme package inside the project — since 53 it no longer ships with `@slidev/cli` — and Slidev exits when it cannot find one. Three ways out: run `npm i %s` inside `%s` (that gives you the default look); or add three lines at the very top of the document — `---`, `theme: none`, `---` (no theme, just to get the content on screen); or write the name of a theme that is installed on this machine." = "找过了 `%s`（连同各层父目录）。没写 `theme:` 的文档，Slidev 照样要去项目里找那个默认主题包——53 起它不再随 `@slidev/cli` 一起装，找不到就退出。三条出路：在 `%s` 里跑一次 `npm i %s`（有默认样式）；或者在文档最前面加三行 `---`、`theme: none`、`---`（不用主题，先把内容放出来）；或者写一个本机装过的主题名。"
+"Looked for `%s` (and in every parent directory). Slidev resolves a theme by trying `@slidev/theme-<name>` and then `slidev-theme-<name>`; this is the first of the two. Install one inside `%s`: `npm i %s`; or change the `theme:` line at the top of the document to `none` (no theme) or to the name of a theme that is installed." = "找过了 `%s`（连同各层父目录）。Slidev 按 `@slidev/theme-<名>`、`slidev-theme-<名>` 的顺序找主题，这里问的是头一个。在 `%s` 里装一个就行：`npm i %s`；或者把文档开头那行 `theme:` 改成 `none`（不用主题）或一个装过的主题名。"
+"found `%s`" = "找到了 `%s`"
+"no `%s`" = "没找到 `%s`"
+"Try anyway" = "仍然试一次"
+"Stop Slidev preview" = "停止 Slidev 预览"
+"Stop preview" = "停止预览"
+"Open the official install guide" = "去官网看安装指南"
+"Command" = "命令"
+"Detected Slidev%s — you can open the preview." = "已检测到 Slidev%s，可以打开预览。"
+"Start Slidev preview" = "开始 Slidev 预览"
+"Start preview" = "开始预览"
+"Current document" = "当前文档"
+"Could not open the browser: %s" = "打不开浏览器：%s"
+"found" = "找到了"
+"The probe got no answer: `%s` did not reply within 20 seconds. That does not mean it is not installed." = "探测没问出结果：`%s` 没在 20 秒内回话。这不代表没装。"
+"Edits re-render automatically (Slidev's own hot reload). Only one screen is drawn here; press “Open in browser” when you present full-screen." = "改文档会自动重新渲染（Slidev 自己的热更新）。这里只画一屏，全屏讲的时候点「用浏览器打开」。"
+"This page updates itself once the check finishes. If you do not want to wait, press “Check now” below." = "查完这一页会自己更新。等不及就点下面那颗「立刻检测」。"
+"Checking whether Slidev is available on this machine… (up to 20 seconds)" = "正在检查这台机器上有没有 Slidev…（最多 20 秒）"
+"Previewing" = "正在预览"
+"no `@slidev/theme-*`" = "没找到 `@slidev/theme-*`"
+"Version" = "版本"
+"Open in browser" = "用浏览器打开"
+"`%s` cannot run offline, so Slidev is probably not installed on this machine yet." = "离线跑不通 `%s`，这台机器上应该还没装 Slidev。"
+"Check now" = "立刻检测"
+"A custom start command may not understand `--version`, or it may already be running and have no intention of exiting. If you want to try, press “Try anyway”." = "自定义的启动命令可能不认 `--version`，或者本来就一直在跑、不打算退出。想试就直接点「仍然试一次」。"
+"The command to run was not found on this machine — most likely Node.js is not installed. Slidev is a front-end tool, so node/npx has to be there first." = "这台机器上没找到要跑的那条命令——多半是没装 Node.js。Slidev 是个前端工具，得先有 node/npx。"
+"Process output (last few lines)" = "进程输出（最后几行）"
+"Neither that directory nor any of its parents has `node_modules/@slidev/theme-*`. Slidev looks for even the default theme inside the project and exits when it cannot find one — the `npm init slidev@latest` line in the official guide is what creates such a project." = "那个目录（以及它的各层父目录）里没有 `node_modules/@slidev/theme-*`。Slidev 连默认主题都得从项目里找，找不到就直接退出——官方指南里那条 `npm init slidev@latest` 就是在建这样一个项目。"
+"Re-check" = "重新检测"
+"Project root" = "项目根"
+"Preview stopped" = "预览已停止"
+"Preview started (port %d)" = "预览已启动（端口 %d）"
+"The preview is not running" = "预览没在跑"
+"The preview did not start: %s" = "预览没起来：%s"
+"The preview process has exited (port %s). Below is its last output." = "预览进程已经退出了（端口 %s）。下面这段是它最后的输出。"
+"(%d earlier lines not shown.)" = "（前面还有 %d 行没画。）"

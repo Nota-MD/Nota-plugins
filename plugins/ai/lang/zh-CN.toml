@@ -1,0 +1,132 @@
+# 「AI 助手」插件的中文（简体）文案表。
+#
+# # 这张表怎么来的
+#
+# 键 = **代码里 `T("…")` 写下的那句原文**，一字不差（含标点）。查不到
+# 这条键就用原文——所以这份表里**只需要放要翻译的那些**。
+# ⚠️ 2026-10-04 起 `T("…")` 不只在 `main.lua` 里了：`chat.lua` / `store.lua` /
+# `scope.lua` / `panel.lua` 各有一份自己的 `T`，四份都进这张表。
+#
+# ⚠️ **主语言是英语**（2026-09-27 用户定的方向，2026-09-28 铺到这一层）：
+# 代码里写的是**英语原文**，中文是**翻译**，在这一份里。英语自己那份
+# （`lang/en.toml`）**没有了**——英语就是原文，一张空表而已。
+#
+# ⚠️ 改了代码里的英语原文 = 改了一个键，这里的对应条目会**静默失效**
+# （表现是那句退回英语，不报错）。`bash tools/i18n-check.sh` 会把废键揪出来。
+#
+# ⚠️ 句子里的 `%s` / `%d` 是占位符，译文里的**个数和顺序必须与原句一致**
+# （走 `string.format`）；真要写一个百分号，写成 `%%`。
+#
+# ⚠️ `name` / `description` 是**保留键**：清单里那两行（插件显示名、列表里那一行
+# 简介）在**本语言**下怎么写。它们不必出现在代码里。⚠️ 清单里写的是英语原文，
+# 所以要给中文用户看的名字与简介，都写在这里。
+# ── 保留键：中文下的显示名与简介 ──────────────────────────────────
+name = "AI 助手"
+description = "写作助手：润色、续写、总结、翻译。需要自备 API 密钥。"
+
+# ── 正文里的那些句子 ────────────────────────────────────────────────
+"Polish" = "润色"
+"Summarize" = "总结"
+"Continue writing" = "续写"
+"Translate to English" = "译成英文"
+"Translate to Chinese" = "译成中文"
+"%s saved" = "%s已保存"
+"%s restored to its default" = "%s已恢复默认"
+"The AI's reply contains changes; they are written to the document only after you confirm." = "AI 的回复里带了改动，确认后才会写进文档。"
+"API key" = "API 密钥"
+"Ctrl+Enter to send · Enter for a new line" = "Ctrl+Enter 发送 · 回车换行"
+"An OpenAI-compatible URL (including /v1). For a local service you can use http://127.0.0.1:11434/v1" = "OpenAI 兼容的地址（含 /v1）。本机服务可以填 http://127.0.0.1:11434/v1"
+"The answer to “%s” is in the AI panel on the right." = "「%s」的回答在右侧 AI 面板里。"
+"Unknown preset: %s" = "不认识的预设：%s"
+"Delete this chat" = "删除这个对话"
+"Send" = "发送"
+"It is sent only to the address above. Local models (Ollama / LM Studio) usually need no key — any value will do." = "只发给上面那个地址。本机模型（Ollama / LM Studio）通常不要密钥，随便填一个即可。"
+"View in editor" = "在编辑区看"
+"URL" = "地址"
+"The name from your provider's documentation" = "填服务商文档里那个名字"
+"Key" = "密钥"
+"On the current document" = "对当前文档"
+"At most %d chats can be kept at once; delete a few first." = "对话最多同时留 %d 个，先删掉几个。"
+"Deleted this chat" = "已删除这个对话"
+"Cleared this chat" = "已清空这个对话"
+"configured" = "已配置"
+"Apply changes" = "应用改动"
+"Changes waiting to be applied (not yet written to the document)" = "待应用的改动（还没写进文档）"
+"Change key…" = "换密钥…"
+"The endpoint returned 200 but there is no choices[1].message.content in it." = "接口回了 200，但里面没有 choices[1].message.content。"
+"Endpoint URL" = "接口地址"
+"The endpoint did not return JSON (HTTP %s): %s" = "接口没回 JSON（HTTP %s）：%s"
+"The endpoint returned %d: %s" = "接口返回 %d：%s"
+"%d lines in the change block are neither - nor +; they were ignored." = "改动块里有 %d 行既不 - 也不 +，忽略掉了。"
+"The changes have been written to the document; Ctrl+Z undoes them" = "改动已写入文档，Ctrl+Z 可以撤销"
+"The changes could not be applied: %s" = "改动没能应用：%s"
+"Change preview" = "改动预览"
+"Change URL…" = "改地址…"
+"Change model…" = "改模型…"
+"Discard changes" = "放弃改动"
+"New chat" = "新对话"
+"Model" = "模型"
+"Model name" = "模型名"
+"Nothing to send" = "没写要发的内容"
+"There are no changes waiting to be applied" = "没有待应用的改动"
+"Change %d" = "第 %d 处"
+"Set key…" = "设置密钥…"
+"The request was not sent: %s" = "请求没发出去：%s"
+"not set" = "还没填"
+"No API key yet: press “Set key…” in the panel." = "还没填 API 密钥：面板上点「设置密钥…」。"
+"Nothing said yet. Type below, or press a preset." = "还没说话。在下面打字，或者点一个预设。"
+"That chat is gone" = "那个对话已经不在了"
+"Ask something, or have it edit the document…" = "问点什么，或者让它改文档…"
+"(%d lines in total; only the first %d are drawn here — “Apply changes” writes the complete set.)" = "（一共 %d 行，这里只画了前 %d 行；点「应用改动」写进去的是完整的那份）"
+"(Only the latest %d are shown; this chat has %d in total.)" = "（只显示最近 %d 条；这个对话一共 %d 条）"
+"(These changes have been applied.)" = "（已应用这次改动。）"
+"(This round had only a change block and nothing else.)" = "（这一轮只有改动块，没有别的话。）"
+"(These changes were discarded.)" = "（这次的改动作废了。）"
+"＋ New chat" = "＋ 新对话"
+"Press “Set key…” in Settings at the bottom first; the input box appears once that is filled in." = "先在最下面的「设置」里填好密钥，这里才会出现输入框。"
+
+# ── 2026-10-04 加的（第 57 / 59 / 60 / 61 项）────────────────────────
+"Settings" = "设置"
+"Chats (%d open, %d in total)" = "对话（开着 %d 个，一共 %d 个）"
+"Close this chat" = "关闭这个对话"
+"Closed chats (%d). They are out of the context; open one to talk to it again." = "已关闭的对话（%d 个）。它们不在上下文里；打开一个就能接着说。"
+"Closed “%s”. It is out of the context now; open it again whenever you want." = "已关闭「%s」。它不在上下文里了，想接着聊随时打开。"
+"Delete “%s”" = "删除「%s」"
+"That chat is closed. Open it first." = "那个对话是关着的，先打开它。"
+"No chat is open" = "没有打开的对话"
+"No chat is open. Press “New chat” first." = "没有打开的对话。先点「新对话」。"
+"No chat is open. Press “＋ New chat”, or open one of the closed chats above." = "没有打开的对话。点「＋ 新对话」，或者打开上面关着的某一个。"
+"Show all (%d characters)" = "展开全文（共 %d 字符）"
+"Collapse" = "收起"
+"(This message has %d characters; the panel can draw at most %d of them.)" = "（这条一共 %d 字符，面板一次最多画 %d 字符。）"
+"Files the AI may read in this chat" = "这个对话里 AI 可读的文件"
+"At most %d files, %d characters counted together. This belongs to this chat only." = "最多 %d 个文件、合计 %d 字符。这一份只属于这个对话。"
+"Readable size" = "可读上限"
+"%d characters" = "%d 字符"
+"Change readable size…" = "改可读上限…"
+"Characters" = "字符数"
+"How many characters the readable files may take together. Roughly a quarter of that many tokens for Chinese text." = "这些可读文件合计最多占多少字符。中文大致是它四分之一的 token 数。"
+"There is no .md file in the workspace root (only the top level is listed)." = "工作区根目录里没有 .md 文件（只列这一层）。"
+"No workspace is open, so the files of the workspace cannot be listed. Open a folder first." = "还没打开工作区，列不出里面的文件。先打开一个文件夹。"
+"This host build has no nota.fs, so no files can be listed." = "这个宿主没有 nota.fs，列不出文件。"
+"This host build has no nota.data; chats will not be kept after you quit." = "这个宿主没有 nota.data；关掉应用之后这些对话不会留着。"
+"No file was named." = "没指定文件。"
+"At most %d files can be readable in one chat; unselect one first." = "一个对话最多让 %d 个文件可读，先摘掉一个。"
+"%s is now readable by the AI in this chat." = "%s 已加入这个对话的可读范围。"
+"%s is no longer readable by the AI." = "%s 不再让 AI 读了。"
+"%s could not be read (it may have been moved or deleted)." = "%s 读不到（可能被移走或删掉了）。"
+"%s was cut short: it has %d characters and only %d were left in the budget." = "%s 被截短了：它一共 %d 字符，而预算里只剩 %d。"
+"%s was not sent: the size budget (%d characters) is used up." = "%s 没发出去：大小预算（%d 字符）已经用完了。"
+"These chats could not be saved: %s" = "这些对话没能存下来：%s"
+"The saved chat file hit its 1 MiB limit, so %d of the oldest chats were dropped." = "对话存盘文件到了 1 MiB 上限，最旧的 %d 个对话被丢掉了。"
+"The endpoint URL must start with https:// (or http:// for a service on this machine): %s" = "接口地址要以 https:// 开头（本机服务可以 http://）：%s"
+"The request failed for an unknown reason." = "请求失败了，原因不明。"
+"That message is gone" = "那条消息已经不在了"
+"Show as it is written" = "边生成边显示"
+"on" = "开"
+"off" = "关"
+"Turn on “show as it is written”" = "打开「边生成边显示」"
+"Turn off “show as it is written”" = "关掉「边生成边显示」"
+"Answers will be shown as they are written." = "往后回答会边写边显示。"
+"Answers will be shown all at once again." = "往后回答会整段显示。"
+"The endpoint streamed a reply but it had no text in it." = "接口按流式回了，但里面一个字都没有。"

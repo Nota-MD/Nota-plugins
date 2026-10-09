@@ -1,0 +1,89 @@
+# 「Git」插件的中文（简体）文案表。
+#
+# # 这张表怎么来的
+#
+# 键 = **`main.lua` 里 `T("…")` 写下的那句原文**，一字不差（含标点）。查不到
+# 这条键就用原文——所以这份表里**只需要放要翻译的那些**。
+#
+# ⚠️ **主语言是英语**（2026-09-27 用户定的方向，2026-09-28 铺到这一层）：
+# 代码里写的是**英语原文**，中文是**翻译**，在这一份里。英语自己那份
+# （`lang/en.toml`）**没有了**——英语就是原文，一张空表而已。
+#
+# ⚠️ 改了 `main.lua` 里的英语原文 = 改了一个键，这里的对应条目会**静默失效**
+# （表现是那句退回英语，不报错）。`bash tools/i18n-check.sh` 会把废键揪出来。
+#
+# ⚠️ 句子里的 `%s` / `%d` 是占位符，译文里的**个数和顺序必须与原句一致**
+# （走 `string.format`）；真要写一个百分号，写成 `%%`。
+#
+# ⚠️ `name` / `description` 是**保留键**：清单里那两行（插件显示名、列表里那一行
+# 简介）在**本语言**下怎么写。它们不必出现在代码里。⚠️ 清单里写的是英语原文，
+# 所以要给中文用户看的名字与简介，都写在这里。
+# ── 保留键：中文下的显示名与简介 ──────────────────────────────────
+name = "Git 版本控制"
+description = "查看改动、比较差异、提交。走系统 git 命令，尊重你的 gitconfig 与 hook。"
+
+# ── 正文里的那些句子 ────────────────────────────────────────────────
+"git add failed: %s" = "git add 失败：%s"
+"git commit failed: %s" = "git commit 失败：%s"
+"git init failed: %s" = "git init 失败：%s"
+"One line saying what changed" = "一句话说清这次改了什么"
+"Stages every change with `add`, then commits them together" = "会把所有改动 add 之后一起提交"
+"Try again" = "再试一次"
+"Refresh" = "刷新"
+"Refresh changes" = "刷新改动"
+"formerly %s" = "原名：%s"
+"Could not get the diff: %s" = "取差异失败：%s"
+"%d more untracked files are not in the diff — git's diff only covers tracked files; once they are committed they will show up here." = "另有 %d 个未跟踪的文件不在差异里——git 的 diff 只谈已跟踪的文件，提交一次之后它们就进来了。"
+"Create a repository in the document's directory and you can look at changes, compare diffs and commit right here." = "在文档所在目录建一个仓库，就能在这里看改动、比差异、提交了。"
+"View in editor" = "在编辑区看"
+"Diff" = "差异"
+"Between %s → %s" = "%s → %s 之间"
+"%s exited with a non-zero status" = "%s 非零退出"
+"Could not read the commit tree: %s" = "取提交树失败：%s"
+"Selected: %s" = "已选：%s"
+"Commit tree" = "提交树"
+"The commit tree is empty." = "提交树是空的。"
+"Hide the commit tree" = "收起提交树"
+"Clear selection" = "清空选择"
+"Click the graph on the left for what this commit changed; click the text on the right to select it (select two to compare them)." = "点左边的图线 = 这一次提交改了什么；点右边的字 = 选中它（选两个就能比两者之间）。"
+"Diff %s against its parent %s" = "看 %s 与它父提交 %s 之间的差异"
+"See what the very first commit %s put in (it has no parent to compare against)" = "看第一次提交 %s 都放了什么（它没有父提交可比）"
+"The first commit %s (everything counts as newly added)" = "第一次提交 %s（全部内容都算新加的）"
+"There is no first commit yet. Once you commit, the tree will grow here." = "还没有第一次提交。提交之后这里就长出提交树了。"
+"This line has no commit, so there is nothing to open." = "这一行没有提交，点不了。"
+"This line has no commit, so it cannot be selected." = "这一行没有提交，选不了。"
+"Select %s (pick one more to compare them)" = "选中 %s（再选一个就能比两者之间）"
+"(red = removed, green = added, blue = where, grey = file info)" = "（红 = 删，绿 = 增，蓝 = 位置，灰 = 文件信息）"
+"modified" = "已修改"
+"Committed" = "已提交"
+"staged" = "已暂存"
+"staged, with further changes" = "已暂存且有新改动"
+"Commit…" = "提交…"
+"Commit message" = "提交信息"
+"The commit message cannot be empty" = "提交信息不能为空"
+"Hide diff" = "收起差异"
+"untracked" = "未跟踪"
+"There is no diff to show." = "没有可显示的差异。"
+"There is nothing to commit" = "没有改动需要提交"
+"No uncommitted changes." = "没有未提交的改动。"
+"Show diff" = "看差异"
+"This is not a git repository" = "这里不是 git 仓库"
+"This is not a git repository: %s" = "这里不是 git 仓库：%s"
+"Create a repository" = "初始化仓库"
+"The repository is ready" = "仓库建好了"
+"Git identity" = "Git 身份"
+"git uses this to sign every commit" = "git 拿它给每次提交署名"
+"Name, for example: Jane Doe" = "名字，比如：张三"
+"Email" = "邮箱"
+"Set identity…" = "填身份…"
+"Both the name and the email are required" = "名字和邮箱都要填"
+"Could not save the identity: %s" = "填身份失败：%s"
+"The Git identity is saved in this repository" = "Git 身份已记在这个仓库里"
+"This repository has no Git identity (name and email) yet; git will refuse to commit." = "这个仓库还没设 Git 身份（名字和邮箱），git 会拒绝提交。"
+"Set the Git identity (name and email) first — git will not commit without it." = "先填一下 Git 身份（名字和邮箱），git 才肯提交。"
+"(git did not report a branch)" = "（git 没说当前分支）"
+"(%d diff lines in total; the first %d are drawn here. Run `%s` in a terminal to see all of them.)" = "（一共 %d 行差异，这里画了前 %d 行。要看全的在终端跑 `%s`。）"
+"(The diff is too long: %d lines in total, the first %d are drawn here, and %d files are not drawn. Run `%s` in a terminal to see all of it.)" = "（差异太长：一共 %d 行，这里画了前 %d 行，剩下 %d 个文件没画。要看全的在终端跑 `%s`。）"
+"(deleted)" = "（已删除）"
+"(new file)" = "（新文件）"
+"(%d more lines from this file are not drawn)" = "（这份还有 %d 行没画）"
