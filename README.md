@@ -15,7 +15,7 @@ Nota 那四个内置插件的**源码与发布仓库**（2026-10-09 从主仓库
 | 场合 | 落点 |
 |---|---|
 | 开发态（`cargo build` 出来的 debug 二进制） | 环境变量 **`NOTA_PLUGINS_DIR`**；没设时扫**本仓库的 `plugins/`**（相对主仓库就是同级目录 `../Nota-plugins/plugins`）；再没有才退回老的 `<主仓库>/plugins`（那条留着只是为了老检出还能跑） |
-| 打包态 | 主仓库 `src-tauri/tauri.conf.json` 的 `bundle.resources` 把 `../Nota-plugins/plugins` 拷成资源目录里的 `plugins/` |
+| 打包态 | 主仓库 `src-tauri/tauri.conf.json` 的 `bundle.resources` 里那条 `{"../../Nota-plugins/plugins": "plugins"}`（⚠️ **键是相对 `src-tauri/` 的**，所以要两级 `..` 才到工作区）把整棵目录拷成资源目录里的 `plugins/` |
 
 ⚠️ **"装出来的 Nota 自带这四个插件"这件事，由主仓库那条 `bundle.resources` 说了算**：
 删掉它，装出来的包就一个插件都没有，用户在「设置 → 拓展 → 从文件安装…」里自己装
