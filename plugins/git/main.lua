@@ -48,7 +48,17 @@ local T = function(s) return s end
 -- 它本来就是个很快的命令行程序（见 `panel_content` 那段的注释）。
 -- 模块级变量只有四个，**全是显示状态**（`show_diff` / `show_graph` /
 -- `picked` / `compared`），一个字节的 git 输出都没存：差异和树每次都现问。
--- 它们各自在自己那一段里解释。
+-- `show_diff` 那一份在 `diff.lua`（拆文件时跟差异那一整块走的），另外三个在下面。
+--
+-- ⚠️⚠️ **这三个 `local` 2026-10-09 才补回来**：拆 `diff.lua` 那天，四个声明写在同一个块里
+-- 被**整块**删掉（该跟着搬走的只有 `show_diff`）。没声明的名字不是语法错误，只是一次
+-- 全局赋值——一个插件一个 Lua 状态，名字撞不到别人，于是这个错**撑了十天**：用户点开
+-- 提交树时 `picked` 从没赋过初值，`#nil` 当场抛 `attempt to get length of a nil value
+-- (global 'picked')`。教训：`local` 掉了不报错，只会留下一个恰好是 nil 的全局——所以三个
+-- 都给初值；两处自动化是 `tools/git-panel-test.lua` 与 `tools/undeclared-globals.lua`。
+local show_graph = false
+local picked = {}
+local compared = nil
 
 -- ── 小工具 ────────────────────────────────────────────────────────────────
 

@@ -34,8 +34,11 @@ Nota 那四个内置插件的**源码与发布仓库**（2026-10-09 从主仓库
 - `tools/pack-plugin.py` —— 把一个插件目录打成 `.nota-plugin`（可签名）
 - `tools/stats-state-test.lua` —— 写作统计的**无头状态机测试**（桩掉 `nota`，时钟由测试推）
 - `tools/ai-stream-test.lua` —— AI 插件流式那一条路的无头测试
+- `tools/git-panel-test.lua` —— Git 插件的**面板与选择状态**无头测试（2026-10-09 加：
+  那张 `attempt to get length of a nil value (global 'picked')` 的截图就是它的来由）
+- `tools/undeclared-globals.lua` —— 静态扫"没声明就赋值"的名字（＝ 想写全局）
 - `tools/stub-openai.py` / `tools/stub-slidev.py` —— 开发那两个插件时用的假服务
-- `tools/check.sh` —— 本仓库自己的闸（行数 ＋ 上面两份无头测试）
+- `tools/check.sh` —— 本仓库自己的闸（行数 ＋ 上面三份无头测试 ＋ 没声明就赋值的名字）
 
 ## 当前插件
 
