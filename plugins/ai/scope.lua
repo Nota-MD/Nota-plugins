@@ -50,9 +50,15 @@ M.SHOW_MAX = 40
 
 --- 这一段可读的范围能选哪些文件。
 ---
---- 返回 `{ "a.md", "b.md" }`，或者 `nil, 原因`（没开工作区、宿主没给 `nota.fs`、
---- 目录读不到）。⚠️ **失败是有话要说的**（"先打开一个工作区"），所以这里区别于
---- `store.load` 那条"读不到就是空"：那个是"正常地还没有"，这个是"现在做不了"。
+--- 返回 `{ "a.md", "b.md" }`，或者 `nil, 原因`（宿主没给 `nota.fs`、句子根都没有、
+--- 目录读不到）。⚠️ **失败是有话要说的**，所以这里区别于 `store.load` 那条
+--- "读不到就是空"：那个是"正常地还没有"，这个是"现在做不了"。
+---
+--- ⚠️ **2026-10-10：「根」不再非要是工作区**。用户那天报了一句「**找不到工作区**」
+--- （附一张截图：他直接开了一份 `.md`，没"打开文件夹"，于是这一栏列不出东西）。
+--- 宿主那边现在与 `nota.git` 同一套回退：**工作区根 → 活动文档所在目录**
+---（`lua/api/fs.rs::挑根`）。所以这里唯一还列不出来的场合是**文档一次都没存过盘**
+--- ——那句话照实说，别再叫用户去"打开文件夹"了（他开的就是文件）。
 function M.available(nota)
   if not (nota.fs and nota.fs.list) then
     return nil, T("This host build has no nota.fs, so no files can be listed.")
@@ -62,7 +68,7 @@ function M.available(nota)
     return nota.fs.list(".")
   end)
   if not ok then
-    return nil, T("No workspace is open, so the files of the workspace cannot be listed. Open a folder first.")
+    return nil, T("This document has never been saved, so the folder next to it cannot be listed. Save it once, or open a folder first.")
   end
   if type(names) ~= "table" then
     return {}
