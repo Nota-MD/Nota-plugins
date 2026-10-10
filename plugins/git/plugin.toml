@@ -24,7 +24,7 @@ api         = 2
 
 description = "See changes, compare diffs and commit. Uses the system git command and respects your gitconfig and hooks."
 license     = "BSD-2-Clause"
-authors     = ["Nota contributors"]
+authors     = ["Leo Lee"]
 entry       = "main.lua"
 
 # 这个插件认哪些界面语言。一写就**参与语言协商**：应用语言在这张清单里 → 用

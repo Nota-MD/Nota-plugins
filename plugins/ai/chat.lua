@@ -412,15 +412,23 @@ local function build_messages(nota, chat)
 end
 
 --- 说一句话 → 等回答 → 落进对话里。**所有会走网络的路都收在这一个函数**。
-function M.send(nota, chat, text)
+--- 发一轮。
+---
+--- ⚠️ `再问一次`（2026-10-10 加）：`true` = **不再往对话里追加一条用户消息**——
+--- 这条路上的那一句已经在里面了（「重试」把上一条回答丢掉之后走的就是这儿）。
+--- 加它而不是在 `retry` 里抄一份：这一段的每一行都是"一轮说完该发生什么"
+--- （组消息、落盘、推流、失败也要留痕），抄第二份就一定有一处会漂。
+function M.send(nota, chat, text, again)
   if not chat then
     return { ok = false, error = T("No chat is open. Press “New chat” first.") }
   end
 
   local fresh = chat_is_fresh(chat)
-  chat.msgs[#chat.msgs + 1] = { role = "user", text = text }
-  if fresh then
-    chat.title = title_from(text)
+  if not again then
+    chat.msgs[#chat.msgs + 1] = { role = "user", text = text }
+    if fresh then
+      chat.title = title_from(text)
+    end
   end
 
   local messages, notes = build_messages(nota, chat)
@@ -487,6 +495,49 @@ function M.send(nota, chat, text)
 end
 
 --- 跑一个预设：就是把那句写好的话当用户消息发出去。
+---
+--- 「再问一次」（`retry_last`，2026-10-10 加）：把**最后一条回答**丢掉，拿上一条
+--- 用户消息重发一次。
+---
+--- ⚠️ 与 Markra 那条 `onRetryMessage` 是同一件事（用户点名参照的那份源码里，
+--- 每条 AI 回答底下都有一颗重试）。为什么要有它：模型偶尔答歪、答一半断了、
+--- 或者用户就想换个说法看看——没有这颗按钮，用户得把刚才那句话再打一遍，
+--- 而这一遍还会多出一条用户消息（上下文里躺着两句一样的话）。
+---
+--- ⚠️ 判据是「**最后一条是 `assistant`**」：末尾是错误说明时不给重试（那条错误
+--- 说的是"没发出去"，重试一次大概率还是同样结果，用户该做的是去改设置、
+--- 或者把这句话改一改再发）；还没答完时也不给（面板那边按 `busy` 灰着）。
+function M.retry_last(nota)
+  local c = M.current()
+  if not c then
+    return { ok = false, error = T("No chat is open. Press “New chat” first.") }
+  end
+
+  local last_user = nil
+  for i = #c.msgs, 1, -1 do
+    if c.msgs[i].role == "user" then
+      last_user = i
+      break
+    end
+  end
+  if not last_user then
+    return { ok = false, error = T("There is nothing to ask again yet") }
+  end
+
+  -- 丢掉那条用户消息**之后**的全部内容（上一条回答、错误说明、旁白）。
+  -- ⚠️ 那条待应用的改动也一起作废：它多半就是这一条回答带出来的，
+  -- 而重试之后会有一份新的（`M.send` 里那条"新回复没有改动块就作废旧的"同理）。
+  for i = #c.msgs, last_user + 1, -1 do
+    table.remove(c.msgs, i)
+  end
+  c.patch = nil
+  c.expanded = {}
+
+  local text = c.msgs[last_user].text
+  return M.send(nota, c, text, true)
+end
+
+--- 跑一个预设：就是把那句写好的话当用户消息发出去。
 function M.run_preset(nota, id)
   local p = PRESETS[id]
   if not p then
@@ -538,13 +589,20 @@ end
 --- ⚠️ 与 `drop_chat` 是**两件事**（第 61 项 (b)）：关是"这次不聊它了"，
 --- 删是"这段记录不要了"。从前只有后者，而且只剩一个时它偷偷降级成清空——
 --- 两个意思共用一个红按钮。
-function M.close_chat(nota)
-  local c = M.current()
+---
+--- ⚠️ **2026-10-10 起 `args.id` 可选**：对话搬进上方的标签页之后，每一颗标签
+--- 右边都有一颗叉，而那颗叉点的是**那一颗**（可能是当前这个，也可能不是）。
+--- 不给 `id` 就是"关当前这个"——老写法（菜单 / 面板上那颗按钮）一个字没改。
+function M.close_chat(nota, id)
+  local i = id and find_chat(id) or nil
+  local c = i and chats[i] or M.current()
   if not c then
     return { ok = false, error = T("No chat is open") }
   end
   c.open = false
-  -- `cur` 还指着它，`M.current()` 会自己跳到下一个开着的（没有就是 nil）。
+  -- `cur` 可能还指着它，`M.current()` 会自己跳到下一个开着的（没有就是 nil）。
+  -- ⚠️ 这一步**关谁都要跑**：关掉的不一定是当前那个，而"当前那个刚好被关掉了"
+  -- 这件事只有 `M.current()` 知道该怎么办。
   M.current()
   touch(nota)
   nota.ui.notify(T("Closed “%s”. It is out of the context now; open it again whenever you want.", T(c.title)), "info")

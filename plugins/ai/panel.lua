@@ -1,4 +1,5 @@
--- 把 AI 助手那一栏**画出来**：对话切换器、可读文件、消息、待应用的改动、预设、输入框、设置。
+-- 把 AI 助手那一栏**画出来**：上方的对话标签页、消息、待应用的改动、输入卡片、
+-- 两个次要开关、以及"设置在哪"那一句。
 --
 -- 2026-09-29 从 `main.lua` 按功能拆出来（那一份当时 997 行）。拆的线是
 -- 「**谁只读、谁改东西**」：本文件里**没有一个函数改状态**——从头到尾只做一件事，
@@ -18,21 +19,38 @@
 -- | **本文件** `panel.lua` | 把上面那几份画成右侧栏那一列内容块（**只读**） |
 -- | `main.lua` | 插件外壳：`on_load` / 命令注册 / 菜单与面板声明 |
 --
--- # ⚠️ 2026-10-04：版面的顺序按第 61 项 (a) 改过
+-- # ⚠️ 2026-10-10：整块版面按用户那句「要让它更现代」重排过
 --
--- 用户原话是「**上方可以切换不同对话**」，而当时的顺序是
--- 设置 → 对话清单 → 消息 → ……——**设置在最上面**，而清单只列最近 5 个。
--- 现在的顺序是这一列（从上到下）：
+-- 用户原话是「**修改AI插件。……要让它更现代，类似这种**」（附一张 DeepSeek 的
+-- 对话框截图）＋「**API等设置专门放一个窗口**」＋「**对话用标签页管理，在上方**」。
+-- 于是这一栏从"一列按钮和清单"变成一张对话框，顺序是（从上到下）：
 --
--- 1. **对话切换器**（全部对话，开着的在上、关着的在下）；
--- 2. 消息 ＋ 待应用的改动；
--- 3. 「AI 可读的文件」（第 61 项 (c)）；
--- 4. 预设 ＋ 输入框；
--- 5. **设置挪到了最下面**——它是一次性填完就不再看的东西，占着最上面那一屏
---    等于把"切换对话"这件事挤出去。
+-- 1. **标签页**（`kind = "tabs"`，开着的对话各一颗，末尾一颗「＋」）；
+-- 2. 消息（一句话都没说时是 `kind = "hero"` 那一行问候）＋ 待应用的改动；
+-- 3. **输入卡片**（`kind = "input"`：多行框 ＋ 一排预设小按钮 ＋ 发送键）；
+-- 4. 两张**次要开关**（「可读文件」「已关掉的」）——摊开的那两块跟在它们后面；
+-- 5. 最后一行灰字：**「API 与模型在设置里」**。
+--
+-- ⚠️ **五格设置整块搬去了「设置 → 拓展」那扇窗**（2026-10-10）：
+-- 地址 / 模型 / 密钥 / 可读上限 / 边生成边显示，现在由宿主画
+--（清单里的 `[[settings]]`，见 `plugin.toml` 底下那一段）。从前它们挤在面板最下面、
+-- 占掉半屏，而"填一次就不再看"的东西不该常驻在一个聊天窗口里——这也正是用户
+-- 那句话的意思。⇒ 本文件里那一段（`settings_blocks`）**整块删掉了**。
 --
 -- ⚠️ `T` 也要 `bind_text`（`main.lua` 的 `on_load` 里那一句），理由见 `util.lua` 文件头。
 -- ⚠️ 变量名一律 ASCII（理由写在 `main.lua` 文件头）。
+
+-- ── 这一栏自己的两个显示开关 ─────────────────────────────────────────────
+--
+-- 「可读文件」与「已关掉的对话」两块默认**收着**：它们都是"偶尔用一次"的东西，
+-- 摊开时会各占掉半屏（文件最多 5 颗按钮、已关掉的对话还可能更多），而聊天的
+-- 主视线只该有"消息 ＋ 输入框"。
+--
+-- ⚠️ **状态住在本模块**，`main.lua` 只经 `M.scope_open()` / `M.toggle_scope_open()`
+-- 那两对读写——与 `diff.lua` 那份 `show_diff` 同一条口径（`docs/12` §5.9）：
+-- 谁的东西谁拿着，别让"两处各存一份"变成"按一下按钮、面板里却没变"。
+local show_scope = false
+local show_closed = false
 
 local util = require("util")
 local chat = require("chat")
@@ -87,83 +105,98 @@ local HOST_TEXT_MAX = 20000
 local ON = "✓ "
 local OFF = "○ "
 
--- ── 对话切换器 ────────────────────────────────────────────────────────────
+-- ── 对话：上方的标签页 ────────────────────────────────────────────────────
 
---- 一颗对话按钮（开着的、关着的共用一份画法）。
-local function chat_button(c, i, is_open)
-  return {
-    -- ⚠️ 标题存的是**原文**（`chat.lua::fresh` 那个"新对话"是模块级求值的，
-    -- 那时 `T` 还是占位符），所以这里要现取一次译文。
-    label = (is_open and (i == chat.cur_index() and "● " or "○ ") or "· ") .. T(c.title),
-    command = is_open and "switch_chat" or "reopen_chat",
-    args = { id = c.id },
-    style = (is_open and i == chat.cur_index()) and "primary" or "normal",
-  }
-end
-
---- 顶上那一段：**全部**对话（第 61 项 (a)）。
----
---- ⚠️ 从前只列最近 5 个，更早的只画一句"前面还有 N 个"——**那些对话既看不见
---- 也点不到**，唯一能碰到它们的办法是把更晚的删掉。这一栏是能滚的
---- （`.dock-body` 有 `overflow: auto`），列得下。
-local function chats_blocks()
-  local blocks = {}
-  local is_open = chat.open_count()
-
-  blocks[#blocks + 1] = {
-    kind = "heading",
-    text = T("Chats (%d open, %d in total)", is_open, chat.count()),
-  }
-
-  local items = { { label = T("＋ New chat"), command = "new_chat", style = "primary" } }
-  if is_open > 0 then
-    -- ⚠️ **关闭**，不是删除（第 61 项 (b)）：关掉的那个不再进上下文，点一下能再开。
-    -- 它**不画成红色**——红色留给下面那颗真的会把记录扔掉的。
-    items[#items + 1] = { label = T("Close this chat"), command = "close_chat" }
-    items[#items + 1] = { label = T("Delete this chat"), command = "del_chat", style = "danger" }
-  end
-  for i = 1, chat.count() do
-    local c = chat.at(i)
-    if c.open then
-      items[#items + 1] = chat_button(c, i, true)
-    end
-  end
-  blocks[#blocks + 1] = { kind = "buttons", items = items }
-
-  -- 关着的那几个：单独一组，带「打开」和「删除」。
-  local closed = {}
+--- 关着的那几个对话（下标 + 对话本身）。**两处要用**（那两颗小开关的计数、
+--- 摊开时那一列），所以只数一遍。
+local function closed_chats()
+  local out = {}
   for i = 1, chat.count() do
     local c = chat.at(i)
     if not c.open then
-      closed[#closed + 1] = { c = c, i = i }
+      out[#out + 1] = { c = c, i = i }
     end
   end
-  if #closed > 0 then
-    blocks[#blocks + 1] = {
+  return out
+end
+
+--- 上方那一排标签页：**开着的对话各一颗**（第 61 项 (a) 那一件，2026-10-10 换的形）。
+---
+--- ⚠️ 标题存的是**原文**（`chat.lua::fresh` 那个"新对话"是模块级求值的，
+--- 那时 `T` 还是占位符），所以这里要现取一次译文。
+---
+--- ⚠️ 一颗标签是**两颗动作**：点字面切过去（`switch_chat`）、点右边那颗小叉关掉
+--- （`close_chat`，2026-10-10 起它认 `id`，所以关的不一定是当前那个）。
+--- 关**不是删**（第 61 项 (b)）：关掉的那个只是不再进上下文，随时能再打开——
+--- 所以那颗叉**不画成红的**，而且它挂在每一颗标签上不会误伤（红色那颗在
+--- 「已关掉的」摊开之后才出现）。
+local function tabs_block()
+  local items = {}
+  for i = 1, chat.count() do
+    local c = chat.at(i)
+    if c.open then
+      local title = T(c.title)
+      items[#items + 1] = {
+        label = title,
+        active = (i == chat.cur_index()),
+        pick = {
+          command = "switch_chat",
+          args = { id = c.id },
+          title = T("Switch to “%s”", title),
+        },
+        close = {
+          command = "close_chat",
+          args = { id = c.id },
+          title = T("Close “%s” — it leaves the context, and you can open it again", title),
+        },
+      }
+    end
+  end
+  return {
+    kind = "tabs",
+    items = items,
+    new = { command = "new_chat", title = T("New chat") },
+  }
+end
+
+--- 关着的那些：**那一块摊开时**画的一列（默认收着，见上面那两个开关）。
+local function closed_blocks()
+  local closed = closed_chats()
+  if #closed == 0 then
+    return {}
+  end
+  local blocks = {
+    {
       kind = "text",
       tone = "muted",
       text = T("Closed chats (%d). They are out of the context; open one to talk to it again.", #closed),
+    },
+  }
+  local closed_items = {}
+  for _, e in ipairs(closed) do
+    local title = T(e.c.title)
+    -- ⚠️ 记号走 `OFF` 那个常量（理由见它上面那段）：`label = "○ " .. x` 这种写法
+    -- 会被 `tools/i18n-check.sh` §③ 当成一条**文案键**，而它是符号、不进翻译表。
+    closed_items[#closed_items + 1] = {
+      label = OFF .. title,
+      command = "reopen_chat",
+      args = { id = e.c.id },
     }
-    local closed_items = {}
-    for _, e in ipairs(closed) do
-      closed_items[#closed_items + 1] = chat_button(e.c, e.i, false)
-    end
-    blocks[#blocks + 1] = { kind = "buttons", items = closed_items }
-
-    -- ⚠️ 关着的也要能**删**：先打开再删是条路，但用户想清的正是"我不想再看见它"，
-    -- 逼他先把它打开一遍是反的。所以单独给一排红的，一颗对一个。
-    local drop_items = {}
-    for _, e in ipairs(closed) do
-      drop_items[#drop_items + 1] = {
-        label = T("Delete “%s”", T(e.c.title)),
-        command = "del_chat",
-        args = { id = e.c.id },
-        style = "danger",
-      }
-    end
-    blocks[#blocks + 1] = { kind = "buttons", items = drop_items }
   end
+  blocks[#blocks + 1] = { kind = "buttons", items = closed_items }
 
+  -- ⚠️ 关着的也要能**删**：先打开再删是条路，但用户想清的正是"我不想再看见它"，
+  -- 逼他先把它打开一遍是反的。所以单独给一排红的，一颗对一个。
+  local drop_items = {}
+  for _, e in ipairs(closed) do
+    drop_items[#drop_items + 1] = {
+      label = T("Delete “%s”", T(e.c.title)),
+      command = "del_chat",
+      args = { id = e.c.id },
+      style = "danger",
+    }
+  end
+  blocks[#blocks + 1] = { kind = "buttons", items = drop_items }
   return blocks
 end
 
@@ -173,7 +206,7 @@ end
 ---
 --- 返回一串块：**主块在前，按钮在后**——按钮长在这条消息下面，而不是飘到
 --- 这一列的最后去。
-local function one_message(nota, c, i, m)
+local function one_message(nota, c, i, m, is_last)
   local blocks = {}
   local full = m.text
   local is_ai = (m.role == "assistant")
@@ -193,10 +226,13 @@ local function one_message(nota, c, i, m)
 
   if m.role == "assistant" then
     local limit = shown and HOST_TEXT_MAX or PREVIEW_AI
-    blocks[#blocks + 1] = { kind = "message", from = "ai", text = util.cut(full, limit) }
+    -- ⚠️ `copy = true`（2026-10-10）：宿主在每一条底下画一颗「复制」。
+    -- 插件这边没有剪贴板 API，所以这是一句**请求**，不是一条命令
+    --（见 `docs/13` 那条 `kind = "message"`）。
+    blocks[#blocks + 1] = { kind = "message", from = "ai", text = util.cut(full, limit), copy = true }
   elseif m.role == "user" then
     local limit = shown and HOST_TEXT_MAX or PREVIEW_USER
-    blocks[#blocks + 1] = { kind = "message", from = "user", text = util.cut(full, limit) }
+    blocks[#blocks + 1] = { kind = "message", from = "user", text = util.cut(full, limit), copy = true }
   elseif m.role == "error" then
     -- 失败的那一轮。**用 danger 画**：它是一句要用户处理的话（密钥不对、
     -- 连不上），不是聊天内容。
@@ -234,6 +270,16 @@ local function one_message(nota, c, i, m)
     }
   end
 
+  -- ⚠️ **最后一条是 AI 回答时**，底下挂一颗「重试」（2026-10-10 加）。
+  -- 判据与理由写在 `chat.lua::retry_last` 那段：末尾是错误说明时不给
+  --（重试一次还是同样结果），还在生成时宿主会把按钮灰着（`busy`）。
+  if is_last and m.role == "assistant" then
+    blocks[#blocks + 1] = {
+      kind = "buttons",
+      items = { { label = T("Ask again"), command = "retry_last" } },
+    }
+  end
+
   return blocks
 end
 
@@ -243,9 +289,13 @@ local function messages_blocks(nota, c)
   local msgs = c.msgs
 
   if #msgs == 0 then
+    -- ⚠️ 空对话那一屏 2026-10-10 从 `empty`（一句小灰字）换成 `hero`
+    --（一行大字 ＋ 一行小字）：现代对话框在一句都没聊时画的就是这个，
+    -- 而用户那句"要让它更现代"要的正是这一眼的差别。
     blocks[#blocks + 1] = {
-      kind = "empty",
-      text = T("Nothing said yet. Type below, or press a preset."),
+      kind = "hero",
+      title = T("Hello — let's chat"),
+      subtitle = T("Nothing said yet. Type below, or press a preset."),
     }
     return blocks
   end
@@ -260,7 +310,7 @@ local function messages_blocks(nota, c)
   end
 
   for i = start_i, #msgs do
-    for _, b in ipairs(one_message(nota, c, i, msgs[i])) do
+    for _, b in ipairs(one_message(nota, c, i, msgs[i], i == #msgs)) do
       blocks[#blocks + 1] = b
     end
   end
@@ -400,96 +450,47 @@ local function scope_blocks(nota, c)
 end
 
 -- ── 设置（挪到了最下面）───────────────────────────────────────────────────
+--
+-- ⚠️ **2026-10-10：这里从前是本文件里最长的一段**（五行现状 ＋ 五颗带 prompt 的
+-- 按钮：改密钥 / 改地址 / 改模型 / 改可读上限 / 边生成边显示）。用户那句「API等
+-- 设置专门放一个窗口」之后，五格**整块搬去了「设置 → 拓展」**——宿主照着
+-- `plugin.toml` 底下那五段 `[[settings]]` 画（`docs/11` §2.5）。这一栏里只剩
+-- **一句指路的话**，因为它再也读不到"用户配了什么"之外的任何东西要管。
 
---- 设置那一段：五行现状 ＋ 五颗按钮。
+--- 最后那一句灰字：设置在哪。
 ---
---- ⚠️ 2026-10-04 各多了一行一颗：「边生成边显示」（`docs/07` 第 58 项）。
-local function settings_blocks(nota, key)
-  local blocks = {}
+--- ⚠️ **这里只指路、不摆按钮**：插件没有"打开设置窗"这条 API（`docs/13` §8），
+--- 面板上摆一颗点不动的按钮比不摆更坏（见 `buttons` 那条"没写 command 就画成灰的"
+--- ——那是对**作者**的提醒，不是给用户的界面）。
+local function settings_hint()
+  return {
+    kind = "text",
+    tone = "muted",
+    text = T("API key, endpoint, model and the other options are in Settings → Extensions."),
+  }
+end
 
-  blocks[#blocks + 1] = { kind = "heading", text = T("Settings") }
+-- ── 那两张次要开关（可读文件 / 已关掉的）──────────────────────────────────
 
-  blocks[#blocks + 1] = {
-    kind = "fields",
-    items = {
-      { label = T("Model"), value = util.read_setting(nota, util.KEY_MODEL, util.DEFAULT_MODEL) },
-      { label = T("URL"), value = util.read_setting(nota, util.KEY_BASE, util.DEFAULT_BASE) },
-      {
-        label = T("Key"),
-        value = key ~= "" and T("configured") or T("not set"),
-        tone = key ~= "" and "success" or "warn",
-      },
-      { label = T("Readable size"), value = T("%d characters", scope.budget(nota)) },
-      -- 「边生成边显示」（`docs/07` 第 58 项）。**不开成一行字而是画在这儿**：
-      -- 它是"这个插件现在怎么干活"的一部分，和上面四行是同一类东西。
-      {
-        label = T("Show as it is written"),
-        value = util.stream_on(nota) and T("on") or T("off"),
-        tone = util.stream_on(nota) and "success" or "normal",
-      },
+--- 两张小开关。**只在那一块真有东西时给**（没有已关掉的对话就不摆第二颗）：
+--- 一颗点了什么都不发生的开关，比没有这颗更让人困惑。
+local function more_blocks(nota, c)
+  local items = {
+    {
+      label = T("Files the AI may read (%d)", #(c.scope or {})),
+      command = "toggle_scope_view",
+      style = show_scope and "primary" or "normal",
     },
   }
-
-  blocks[#blocks + 1] = {
-    kind = "buttons",
-    items = {
-      {
-        label = key == "" and T("Set key…") or T("Change key…"),
-        command = "set_key",
-        style = key == "" and "primary" or "normal",
-        prompt = {
-          arg = "api_key",
-          label = T("API key"),
-          placeholder = "sk-…",
-          -- ⚠️ 遮屏。密钥会明文存进 `~/.config/nota/plugin-settings/`，
-          -- 这一条挡的不是存盘，是**旁边的人从肩膀上看见**。
-          secret = true,
-          hint = T("It is sent only to the address above. Local models (Ollama / LM Studio) usually need no key — any value will do."),
-        },
-      },
-      {
-        label = T("Change URL…"),
-        command = "set_base",
-        prompt = {
-          arg = "base_url",
-          label = T("Endpoint URL"),
-          placeholder = util.DEFAULT_BASE,
-          hint = T("An OpenAI-compatible URL (including /v1). For a local service you can use http://127.0.0.1:11434/v1"),
-        },
-      },
-      {
-        label = T("Change model…"),
-        command = "set_model",
-        prompt = {
-          arg = "model",
-          label = T("Model name"),
-          placeholder = util.DEFAULT_MODEL,
-          hint = T("The name from your provider's documentation"),
-        },
-      },
-      {
-        label = T("Change readable size…"),
-        command = "set_scope",
-        prompt = {
-          arg = "scope_chars",
-          label = T("Characters"),
-          placeholder = util.DEFAULT_SCOPE,
-          -- ⚠️ 这里**不写"token"**：插件数的是字符，把"token"写上去就成了
-          -- 一句不准的承诺（见 `scope.lua` 文件头那张表）。
-          hint = T("How many characters the readable files may take together. Roughly a quarter of that many tokens for Chinese text."),
-        },
-      },
-      -- ⚠️ 这一条**是开关不是 prompt**（`docs/07` 第 58 项）：它没有"值"要
-      -- 让人填，只有两个状态。面板那套块里没有 checkbox 这种东西（见
-      -- `docs/13`），唯一的开关写法就是"按钮上的字说出按下去会怎样"。
-      {
-        label = util.stream_on(nota) and T("Turn off “show as it is written”") or T("Turn on “show as it is written”"),
-        command = "toggle_stream",
-      },
-    },
-  }
-
-  return blocks
+  local closed = closed_chats()
+  if #closed > 0 then
+    items[#items + 1] = {
+      label = T("Closed chats (%d)", #closed),
+      command = "toggle_closed_view",
+      style = show_closed and "primary" or "normal",
+    }
+  end
+  return { { kind = "buttons", items = items } }
 end
 
 -- ── 整栏 ──────────────────────────────────────────────────────────────────
@@ -503,25 +504,37 @@ function M.content(nota)
   local key = util.read_setting(nota, util.KEY_API, "")
   local blocks = {}
 
-  -- ① 切换器在最上面（第 61 项 (a)）。
-  for _, b in ipairs(chats_blocks()) do
-    blocks[#blocks + 1] = b
-  end
-  blocks[#blocks + 1] = { kind = "separator" }
+  -- ① 标签页在最上面（第 61 项 (a)，2026-10-10 换的形）。
+  blocks[#blocks + 1] = tabs_block()
 
-  -- ② 一个开着的对话都没有 → 下面的消息/预设/输入框统统不画。
+  -- ⚠️ 标签页底下跟一行**小灰字**：现在用的是哪个模型。
+  -- 这一格从前住在面板最下面那五格"现状"里；整块搬走之后，"我在跟哪个模型说话"
+  -- 这条该留在聊天时看得见的地方——现代对话框把它画在标题底下（用户点名参照的
+  -- 那份 Markra 源码也是这个位置），而**地址与密钥**不在这儿：那是设置，
+  -- 不是聊天时该占位置的东西。
+  blocks[#blocks + 1] = {
+    kind = "text",
+    tone = "muted",
+    text = T("Model: %s", util.read_setting(nota, util.KEY_MODEL, util.DEFAULT_MODEL)),
+  }
+
+  -- ② 一个开着的对话都没有（所有对话都被关掉了）→ 只剩指路的一句。
+  -- ⚠️ 这一屏**不画 hero ＋ 输入框**：没有对话就没有地方放那条消息，
+  -- 画了等于让用户敲一段话、按发送、拿一句"没有打开的对话"。
   if not c then
     blocks[#blocks + 1] = {
       kind = "text",
       tone = "warn",
-      text = T("No chat is open. Press “＋ New chat”, or open one of the closed chats above."),
+      text = T("No chat is open. Press “＋”, or open one of the closed chats below."),
     }
-    for _, b in ipairs(settings_blocks(nota, key)) do
+    for _, b in ipairs(closed_blocks()) do
       blocks[#blocks + 1] = b
     end
+    blocks[#blocks + 1] = settings_hint()
     return blocks
   end
 
+  -- ③ 消息（空对话时那一块是 `hero`）＋ 待应用的改动。
   for _, b in ipairs(messages_blocks(nota, c)) do
     blocks[#blocks + 1] = b
   end
@@ -529,31 +542,22 @@ function M.content(nota)
     blocks[#blocks + 1] = b
   end
 
-  -- ③ 可读的文件。
-  blocks[#blocks + 1] = { kind = "separator" }
-  for _, b in ipairs(scope_blocks(nota, c)) do
-    blocks[#blocks + 1] = b
-  end
-
-  -- ④ 预设 ＋ 输入框。
-  blocks[#blocks + 1] = { kind = "separator" }
-  blocks[#blocks + 1] = { kind = "heading", text = T("On the current document") }
-  local items = {}
-  for _, id in ipairs(chat.preset_order()) do
-    -- ⚠️ 预设名**现取译文**（`chat.lua` 里那张 `PRESETS` 是模块级常量，求值时 `T` 还没接上宿主）。
-    items[#items + 1] = { label = T(chat.preset(id).label), command = id }
-  end
-  blocks[#blocks + 1] = { kind = "buttons", items = items }
-
+  -- ④ 输入卡片：多行框 ＋ 一排预设 ＋ 发送键（`kind = "input"`，2026-10-10
+  -- 起它还认 `chips`）。
   if key == "" then
     -- ⚠️ 没密钥时**连输入框都不画**：画了的话用户敲一段话、按发送、等几秒、
-    -- 拿到一句"还没填密钥"。不如把话先说在前面。
+    -- 拿到一句"还没填密钥"。不如把话先说在前面——而且现在能直接告诉他去哪儿填。
     blocks[#blocks + 1] = {
       kind = "text",
       tone = "warn",
-      text = T("Press “Set key…” in Settings at the bottom first; the input box appears once that is filled in."),
+      text = T("No API key yet. Fill it in under Settings → Extensions; the input box appears once that is done."),
     }
   else
+    local chips = {}
+    for _, id in ipairs(chat.preset_order()) do
+      -- ⚠️ 预设名**现取译文**（`chat.lua` 里那张 `PRESETS` 是模块级常量，求值时 `T` 还没接上宿主）。
+      chips[#chips + 1] = { label = T(chat.preset(id).label), command = id }
+    end
     blocks[#blocks + 1] = {
       kind = "input",
       arg = "text",
@@ -563,16 +567,57 @@ function M.content(nota)
       -- 多行框里回车是换行，发送是 Ctrl+Enter（前端 `PanelBody.tsx` 定的规矩）。
       hint = T("Ctrl+Enter to send · Enter for a new line"),
       multiline = true,
+      chips = chips,
     }
   end
 
-  -- ⑤ 设置在最下面。
-  blocks[#blocks + 1] = { kind = "separator" }
-  for _, b in ipairs(settings_blocks(nota, key)) do
+  -- ⑤ 两张次要开关 ＋（摊开时）那两块。
+  for _, b in ipairs(more_blocks(nota, c)) do
     blocks[#blocks + 1] = b
   end
+  if show_scope then
+    for _, b in ipairs(scope_blocks(nota, c)) do
+      blocks[#blocks + 1] = b
+    end
+  end
+  if show_closed then
+    for _, b in ipairs(closed_blocks()) do
+      blocks[#blocks + 1] = b
+    end
+  end
+
+  -- ⑥ 设置在哪（一句话，最下面）。
+  blocks[#blocks + 1] = { kind = "separator" }
+  blocks[#blocks + 1] = settings_hint()
 
   return blocks
+end
+
+-- ── 那两张次要开关的读写（`main.lua` 注册的两条命令调它们）────────────────
+--
+-- ⚠️ 与 `diff.lua` 的 `M.show()` / `M.toggle()` 同一套：**状态在本模块**，
+-- 命令那一层只转一下手。两处各存一份的话，症状是"点了按钮、面板里没变"。
+
+--- 「AI 可读的文件」那一块摊开了没有。
+function M.scope_open()
+  return show_scope
+end
+
+--- 翻一下「AI 可读的文件」那块，返回翻完的值。
+function M.toggle_scope_open()
+  show_scope = not show_scope
+  return show_scope
+end
+
+--- 「已关掉的对话」那一块摊开了没有。
+function M.closed_open()
+  return show_closed
+end
+
+--- 翻一下「已关掉的对话」那块，返回翻完的值。
+function M.toggle_closed_open()
+  show_closed = not show_closed
+  return show_closed
 end
 
 return M

@@ -110,21 +110,11 @@ local T = function(s) return s end
 
 -- ── 生命周期 ──────────────────────────────────────────────────────────────
 
---- 存一个设置项。空串 = **清掉**（回到默认值）——`PromptDialog` 那边把
---- "清空再确定"当取消，所以这条主要给"命令被别的插件调"的场合兜底。
-local function save_setting(nota, key, value, what)
-  if value == nil or value == "" then
-    nota.settings.set(key, nil)
-    -- `what` 由调用方给（"密钥"/"接口地址"/"模型"，见下面几条命令），
-    -- 所以**里外都要过一次 `T`**：里面的键是那个词，外面的键带 `%s`。
-    nota.ui.notify(T("%s restored to its default", T(what)), "info")
-  else
-    nota.settings.set(key, value)
-    nota.ui.notify(T("%s saved", T(what)), "success")
-  end
-  nota.ui.refresh()
-  return { ok = true }
-end
+-- ⚠️ **这里从前有个 `save_setting`**（写 `api_key` / `base_url` / `model` /
+-- `scope_chars`，并弹一句"%s 已保存"）。2026-10-10 那五格设置整块搬去了
+-- 「设置 → 拓展」——写值的是**宿主**（`nota_plugin_setting_set`），插件这一侧
+-- 只读不写，于是这个函数连同它的五条命令一起没了（见 `panel.lua` 顶上那段）。
+-- 插件仍然可以写自己那份设置（`nota.settings`），只是今天没用它的地方。
 
 function M.on_load(nota)
   -- ⚠️ **第一件事**:把文案接上宿主给的这张表（见上面 `local T` 那段）。
@@ -187,9 +177,13 @@ function M.on_load(nota)
     return chat.switch_chat(nota, args and args.id)
   end)
 
-  --- **关闭**当前对话：从上下文里拿掉，记录留着，随时能再打开（第 61 项 (b)）。
-  nota.command.register("close_chat", function()
-    return chat.close_chat(nota)
+  --- **关闭**一个对话：从上下文里拿掉，记录留着，随时能再打开（第 61 项 (b)）。
+  ---
+  --- ⚠️ `args.id` **可选**（2026-10-10 起）：上方标签页里每一颗右边那颗小叉点的
+  --- 是**那一颗**（可能是当前这个，也可能不是）。不给就是"关当前这个"——
+  --- 菜单那条路一直是不给的。
+  nota.command.register("close_chat", function(args)
+    return chat.close_chat(nota, args and args.id)
   end)
 
   --- 重新打开一个关着的对话。`args.id` 同上。
@@ -213,6 +207,30 @@ function M.on_load(nota)
   --- 把「AI 可读的文件」挂上 / 摘下（第 61 项 (c)）。`args.path` 是工作区里的相对路径。
   nota.command.register("toggle_scope", function(args)
     return chat.toggle_scope(nota, args and args.path)
+  end)
+
+  --- 把最后一条回答丢掉、拿上一条用户消息重问一次（2026-10-10 加）。
+  ---
+  --- ⚠️ 面板上那颗「重试」挂在**最后一条 AI 回答**底下（`panel.lua`），
+  --- 判据与理由写在 `chat.lua::retry_last` 那段。
+  nota.command.register("retry_last", function()
+    return chat.retry_last(nota)
+  end)
+
+  --- 摊开 / 收起「AI 可读的文件」那一块（**只改显示，一个字都不改**）。
+  --- ⚠️ 状态在 `panel.lua` 里（那两块是它画的），这里只转一下手——
+  --- 与 git 插件那条 `toggle_graph` 同一条口径（`docs/12` §5.9）。
+  nota.command.register("toggle_scope_view", function()
+    panel.toggle_scope_open()
+    nota.ui.refresh()
+    return { ok = true }
+  end)
+
+  --- 摊开 / 收起「已关掉的对话」那一块。同上。
+  nota.command.register("toggle_closed_view", function()
+    panel.toggle_closed_open()
+    nota.ui.refresh()
+    return { ok = true }
   end)
 
   --- 把待应用的改动写进文档。
@@ -259,46 +277,11 @@ function M.on_load(nota)
     return { ok = true }
   end)
 
-  nota.command.register("set_key", function(args)
-    return save_setting(nota, util.KEY_API, args and args.api_key, "密钥")
-  end)
-
-  nota.command.register("set_base", function(args)
-    return save_setting(nota, util.KEY_BASE, args and args.base_url, "接口地址")
-  end)
-
-  nota.command.register("set_model", function(args)
-    return save_setting(nota, util.KEY_MODEL, args and args.model, "模型")
-  end)
-
-  --- 「AI 可读的文件」那个大小上限（第 61 项 (c)）。
-  --- ⚠️ 存的是**用户敲的那串字**，不是数字：填了个看不懂的东西时
-  --- `scope.budget` 会退回默认（不报错），存原样是为了让用户在设置里
-  --- 一眼看见自己填的是什么。
-  nota.command.register("set_scope", function(args)
-    return save_setting(nota, util.KEY_SCOPE, args and args.scope_chars, "可读范围的字符上限")
-  end)
-
-  --- 「边生成边显示」那个开关（`docs/07` 第 58 项）。
-  ---
-  --- ⚠️ 它**没有参数**：按一下就是把当前状态取反，值由插件自己算。让面板那边
-  --- 传一个"目标值"过来的话，面板上那颗按钮的字（"打开"/"关掉"）一旦和真实
-  --- 状态错开一拍，用户按下去就会按到反的那个方向——那种 bug 只有用户看得见。
-  ---
-  --- ⚠️ **不走 `save_setting`**：那条是给"填一个值"用的，它的提示语是
-  --- `"%s saved"`，套到这句上会变成英语的"Show as it is written saved"。
-  --- 开关要说的是**现在是什么状态**，所以自己说一句。
-  nota.command.register("toggle_stream", function()
-    local on = util.stream_on(nota)
-    nota.settings.set(util.KEY_STREAM, on and "0" or "1")
-    if on then
-      nota.ui.notify(T("Answers will be shown all at once again."), "info")
-    else
-      nota.ui.notify(T("Answers will be shown as they are written."), "info")
-    end
-    nota.ui.refresh()
-    return { ok = true }
-  end)
+  -- ⚠️ **这里原本还有五条命令**：`set_key` / `set_base` / `set_model` /
+  -- `set_scope` / `toggle_stream`。2026-10-10 那五格设置搬进「设置 → 拓展」
+  -- 之后，写值的是宿主的命令（`nota_plugin_setting_set`），插件这边**只读**。
+  -- 删掉它们不是"少了几条能调的命令"，而是**把设置这件事的写入口收成一个**
+  -- ——两个写者并存时，"界面显示的值"与"插件读到的值"迟早会错开一拍。
 
   -- ── 界面贡献 ────────────────────────────────────────────────────────────
   -- `location` 现在可以省（默认就是 `right`），写出来是为了让人一眼看到。

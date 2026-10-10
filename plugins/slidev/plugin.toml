@@ -26,7 +26,7 @@ api         = 2
 
 description = "Play the current Markdown as slides. Runs your local Slidev and embeds the preview in the side panel."
 license     = "BSD-2-Clause"
-authors     = ["Nota contributors"]
+authors     = ["Leo Lee"]
 entry       = "main.lua"
 
 # ── 这个插件认哪些界面语言 ────────────────────────────────────────────────

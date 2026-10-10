@@ -104,7 +104,10 @@ end
 local function preflight(nota)
   local key = util.read_setting(nota, util.KEY_API, "")
   if key == "" then
-    return { ok = false, error = T("No API key yet: press “Set key…” in the panel.") }
+    -- ⚠️ 这一句 2026-10-10 改过：密钥那一格**搬去了「设置 → 拓展」**，
+    -- 面板上再也没有「设置密钥…」那颗按钮了。指错地方的症状是用户翻遍面板
+    -- 找不到我们说的那颗按钮，然后以为插件坏了。
+    return { ok = false, error = T("No API key yet: fill it in under Settings → Extensions.") }
   end
 
   local base = util.read_setting(nota, util.KEY_BASE, util.DEFAULT_BASE)

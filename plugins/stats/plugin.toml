@@ -45,7 +45,7 @@ api         = 2
 
 description = "Track a writing session like a sports watch: start, pause, stop. A big number shows words per minute, with a curve below that rises and falls over time. When you are done you can turn the session (or the day) into a share card."
 license     = "BSD-2-Clause"
-authors     = ["Nota contributors"]
+authors     = ["Leo Lee"]
 entry       = "main.lua"
 
 # 这个插件认哪些界面语言。规则同别的内置插件（`docs/11` §2.4）。

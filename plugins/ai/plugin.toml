@@ -21,7 +21,7 @@ api         = 2
 
 description = "Writing assistant: polish, continue, summarize, translate. Bring your own API key."
 license     = "BSD-2-Clause"
-authors     = ["Nota contributors"]
+authors     = ["Leo Lee"]
 entry       = "main.lua"
 
 # 这个插件认哪些界面语言。一写就**参与语言协商**：应用语言在这张清单里 → 用
@@ -39,6 +39,65 @@ capabilities = [
   "data.own",        # 2026-10-04 起：对话落盘（`~/.local/share/nota/plugin-data/nota.ai/chats.txt`）
   "fs.read",         # 2026-10-04 起：「AI 可读的文件」那一栏要能列/读工作区里的 .md
   "ui.notify",       # 生成好了、写完了、失败了都要说一声
-  "ui.panel",        # 右侧那块面板：切换器、可读文件、消息、待应用的改动、输入框、设置
+  "ui.panel",        # 右侧那块面板：对话标签页、消息、待应用的改动、输入卡片
   "ui.menu",         # 「插件」菜单里那五个预设 ＋「新对话」
 ]
+
+# ── 请宿主画的那几格设置（2026-10-10 加）────────────────────────────────
+#
+# 用户原话：「**API等设置专门放一个窗口**」。
+#
+# 在那之前这五格是**插件自己在面板里画的**（最下面五行现状 ＋ 五颗带 prompt 的
+# 按钮）：地址、模型、密钥、可读上限、"边生成边显示"。问题是① 它们常驻在聊天的
+# 一栏里、占掉半屏；② 用户得先学会"这个插件把设置藏在自己面板底下"。
+# 现在由宿主画在「设置 → 拓展」那一页上——那本来就是**这扇窗里属于插件的地方**。
+#
+# ⚠️ 声明 `[[settings]]` 必须同时申请 `settings.own`（上面能力表里有）：
+# 宿主写的就是 `plugin-settings/nota.ai.toml` 那份文件，没申请却从旁边写
+# 等于绕过能力表开一个口子（判据在 `plugin/settings_decl.rs::check_settings`）。
+#
+# ⚠️ 键名与插件里那五个常量**逐字相同**（`util.lua` 的 `KEY_*`）——
+# 它们是同一份文件上同一批键，两个写者（从前的插件、现在的宿主）读的必须是同一格。
+# ⚠️ `label` / `help` / `placeholder` 写**英语原文**，译文进 `lang/zh-CN.toml`
+# （键就是原文），规矩见 `docs/11`「给拓展做一格设置」。
+
+[[settings]]
+key         = "base_url"
+kind        = "text"
+label       = "Endpoint URL"
+help        = "An OpenAI-compatible URL including /v1. For a local service, http://127.0.0.1:11434/v1 works."
+placeholder = "https://api.openai.com/v1"
+
+[[settings]]
+key         = "model"
+kind        = "text"
+label       = "Model name"
+help        = "The name from your provider's documentation."
+placeholder = "gpt-4o-mini"
+
+[[settings]]
+key         = "api_key"
+kind        = "text"
+label       = "API key"
+help        = "Sent only to the address above. Local models (Ollama / LM Studio) usually need no key — any value will do."
+placeholder = "sk-…"
+# ⚠️ 遮屏**只管显示**：这份设置文件是明文的（`docs/12` §插件设置为什么不加密）。
+# 它挡的是"旁边的人从肩膀上看见"，不是"能读你文件的人"。
+secret      = true
+
+[[settings]]
+key     = "scope_chars"
+kind    = "range"
+label   = "Characters the AI may read"
+help    = "How many characters the readable files may take together. Roughly a quarter of that many tokens for Chinese text."
+min     = 2000
+max     = 100000
+default = 20000
+step    = 1000
+
+[[settings]]
+key        = "stream"
+kind       = "toggle"
+label      = "Show answers as they are written"
+help       = "Off means the answer appears all at once. Turn it off if your service does not support streaming."
+default_on = true
