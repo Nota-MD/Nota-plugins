@@ -26,6 +26,18 @@ warn() { printf '%sWARN%s %s\n' "$Y" "$N" "$1"; WARNS=$((WARNS + 1)); }
 ok()   { printf '%s  ok%s %s\n' "$G" "$N" "$1"; }
 head_() { printf '\n%s── %s%s\n' "$B" "$1" "$N"; }
 
+LUA=""
+if command -v lua5.4 >/dev/null 2>&1; then LUA=lua5.4
+elif command -v lua >/dev/null 2>&1; then LUA=lua; fi
+
+run_lua() {
+  if [ -n "$LUA" ]; then
+    "$LUA" "$@"
+  else
+    podman exec -u 1000 -w "$ROOT" tauri-dev lua "$@"
+  fi
+}
+
 head_ "① 行数（硬线 1000，> 800 报 WARN）"
 OVER=0
 while IFS= read -r f; do
@@ -41,9 +53,9 @@ done < <(find plugins tools -type f \( -name '*.lua' -o -name '*.py' -o -name '*
 
 head_ "② 三份无头测试"
 # ⚠️ 三份都**必须在仓库根跑**（它们按脚本自己的位置算路径）。
-if command -v podman >/dev/null 2>&1; then
+if [ -n "$LUA" ] || command -v podman >/dev/null 2>&1; then
   for t in stats-state-test ai-stream-test git-panel-test; do
-    if out=$(podman exec -u 1000 -w "$ROOT" tauri-dev lua "tools/$t.lua" 2>&1); then
+    if out=$(run_lua "tools/$t.lua" 2>&1); then
       # ⚠️ 三份的收尾行**不是同一句**（`ALL PASS（N 条断言）` / `全部通过`）
       ok "$t：$(printf '%s' "$out" | grep -E 'ALL PASS|全部通过' | tail -1)"
     else
@@ -52,24 +64,31 @@ if command -v podman >/dev/null 2>&1; then
     fi
   done
 else
-  warn "没装 podman —— 这一台机器上 lua 在容器里，② 这一栏跳过"
+  warn "没装 lua/podman —— ② 这一栏跳过"
 fi
 
 head_ "③ 没声明就赋值（想写全局）的名字"
 # ⚠️ 这条是**静态**的（只读源码，不跑插件）：`local` 掉了不会报错，只会留下一个
 # 恰好是 `nil` 的全局——2026-10-09 那张 `global 'picked'` 的截图就是它。
 # 运行期那一半由②里的 `git-panel-test` 按着（它真跑 `on_load` 与面板渲染）。
-if command -v podman >/dev/null 2>&1; then
+if [ -n "$LUA" ] || command -v podman >/dev/null 2>&1; then
   BAD=0
   while IFS= read -r f; do
-    if ! out=$(podman exec -u 1000 -w "$ROOT" tauri-dev lua tools/undeclared-globals.lua "$f" 2>&1); then
+    if ! out=$(run_lua tools/undeclared-globals.lua "$f" 2>&1); then
       printf '%s\n' "$out"
       BAD=$((BAD + 1))
     fi
   done < <(find plugins -type f -name '*.lua' | sort)
   [ "$BAD" -eq 0 ] && ok "四份插件的每一份 .lua 都干净"
 else
-  warn "没装 podman —— ③ 这一栏跳过"
+  warn "没装 lua/podman —— ③ 这一栏跳过"
+fi
+
+head_ "④ 兼容契约"
+if bash tools/check-compatibility.sh; then
+  ok "compatibility.json 与四份清单一致"
+else
+  fail "兼容契约不一致"
 fi
 
 printf '\n%s── 汇总%s\n' "$B" "$N"

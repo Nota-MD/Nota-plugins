@@ -1,0 +1,22 @@
+name: 验证
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: 装 Lua
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: 兼容契约
+        run: bash tools/check-compatibility.sh
+      - name: 官方插件自检
+        run: bash tools/check.sh

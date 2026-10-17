@@ -15,11 +15,11 @@ Nota 那四个内置插件的**源码与发布仓库**（2026-10-09 从主仓库
 | 场合 | 落点 |
 |---|---|
 | 开发态（`cargo build` 出来的 debug 二进制） | 环境变量 **`NOTA_PLUGINS_DIR`**；没设时扫**本仓库的 `plugins/`**（相对主仓库就是同级目录 `../Nota-plugins/plugins`）；再没有才退回老的 `<主仓库>/plugins`（那条留着只是为了老检出还能跑） |
-| 打包态 | 主仓库 `src-tauri/tauri.conf.json` 的 `bundle.resources` 里那条 `{"../../Nota-plugins/plugins": "plugins"}`（⚠️ **键是相对 `src-tauri/` 的**，所以要两级 `..` 才到工作区）把整棵目录拷成资源目录里的 `plugins/` |
+| 发布安装包（当前） | **不随附插件**：主仓库 `bundle.resources = {}`。用户在「设置 → 拓展 → 从文件安装…」安装 `.nota-plugin` |
 
-⚠️ **"装出来的 Nota 自带这四个插件"这件事，由主仓库那条 `bundle.resources` 说了算**：
-删掉它，装出来的包就一个插件都没有，用户在「设置 → 拓展 → 从文件安装…」里自己装
-`.nota-plugin`（`Folio-plugin` 那边走的就是这条路）。今天留着——**换这一档是一行的事**。
+⚠️ **当前产品口径是“官方插件，不随包”**：开发态自动发现同级仓库是为了开发方便，
+**不是**发布包会带插件。若以后改回随包，必须同批修改两仓 README、主仓库
+`docs/11`、`tauri.conf.json` 和安装包验收。
 
 ⚠️ **开发态改 Lua 不用重编**：扫的是源码目录，存盘即生效（重启应用，或把那一页关掉再打开）。
 ⚠️ 但**改 `plugin.toml` 的能力 / 菜单 / 面板声明要重启应用**——那份清单是启动时读的。
@@ -39,6 +39,8 @@ Nota 那四个内置插件的**源码与发布仓库**（2026-10-09 从主仓库
 - `tools/undeclared-globals.lua` —— 静态扫"没声明就赋值"的名字（＝ 想写全局）
 - `tools/stub-openai.py` / `tools/stub-slidev.py` —— 开发那两个插件时用的假服务
 - `tools/check.sh` —— 本仓库自己的闸（行数 ＋ 上面三份无头测试 ＋ 没声明就赋值的名字）
+- `compatibility.json` / `tools/check-compatibility.sh` —— 宿主 API 与四个插件版本的发布契约
+- `.github/workflows/verify.yml` —— push / PR 自动跑兼容契约与全部插件自检
 
 ## 当前插件
 
