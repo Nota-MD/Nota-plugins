@@ -1,5 +1,6 @@
 # 打出来的包（`tools/pack-plugin.py` 的产物）
 plugins/*/dist/
+release/
 
 # Python / 编辑器
 __pycache__/
