@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "repository": "Nota-plugins",
-  "release": "v0.6.0",
+  "release": "v0.6.0-beta",
   "host_api": 2,
   "generated_at": "2026-10-18T09:10:00Z",
   "plugins": [
@@ -12,7 +12,7 @@
       "file": "nota.ai-0.1.0.nota-plugin",
       "size": 60291,
       "sha256": "adaad73530a1a95b022676683810da7eead6926979b4b8c7f8991bdd65418d7b",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.6.0/nota.ai-0.1.0.nota-plugin"
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.6.0-beta/nota.ai-0.1.0.nota-plugin"
     },
     {
       "id": "nota.git",
@@ -21,7 +21,7 @@
       "file": "nota.git-0.1.0.nota-plugin",
       "size": 24145,
       "sha256": "f11bc13dc4a1faae950c74eddea345a8191acc5975889ad03c482cfdb68307a8",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.6.0/nota.git-0.1.0.nota-plugin"
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.6.0-beta/nota.git-0.1.0.nota-plugin"
     },
     {
       "id": "nota.slidev",
@@ -30,7 +30,7 @@
       "file": "nota.slidev-0.1.0.nota-plugin",
       "size": 22065,
       "sha256": "5f762aaaa43a8367cf60336ad652185316c63c4c40614eb540541bb6a525d78f",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.6.0/nota.slidev-0.1.0.nota-plugin"
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.6.0-beta/nota.slidev-0.1.0.nota-plugin"
     },
     {
       "id": "nota.stats",
@@ -39,7 +39,7 @@
       "file": "nota.stats-0.5.0.nota-plugin",
       "size": 1128670,
       "sha256": "ec3405b611b8c8e0ea28fe5c290aacb126e10295a8c93b310190071510295e94",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.6.0/nota.stats-0.5.0.nota-plugin"
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.6.0-beta/nota.stats-0.5.0.nota-plugin"
     }
   ]
 }
