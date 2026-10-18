@@ -16,7 +16,7 @@
 [plugin]
 id          = "nota.ai"
 name        = "AI assistant"
-version     = "0.1.0"
+version     = "0.1.1"
 api         = 2
 
 description = "Writing assistant: polish, continue, summarize, translate. Bring your own API key."
@@ -42,6 +42,10 @@ capabilities = [
   "ui.panel",        # 右侧那块面板：对话标签页、消息、待应用的改动、输入卡片
   "ui.menu",         # 「插件」菜单里那五个预设 ＋「新对话」
 ]
+
+# 插件更新仓库。一份 latest.json 可以同时描述多个插件；宿主按 id 取本插件那一项。
+[update]
+manifest = "https://github.com/Nota-MD/Nota-plugins/releases/latest/download/latest.json"
 
 # ── 请宿主画的那几格设置（2026-10-10 加）────────────────────────────────
 #

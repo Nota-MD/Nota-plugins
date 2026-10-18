@@ -21,7 +21,7 @@
 [plugin]
 id          = "nota.slidev"
 name        = "Slidev Slides"
-version     = "0.1.0"
+version     = "0.1.1"
 api         = 2
 
 description = "Play the current Markdown as slides. Runs your local Slidev and embeds the preview in the side panel."
@@ -50,6 +50,10 @@ capabilities = [
   "ui.menu",            # 「插件」菜单里的「开始预览」/「停止预览」
   "ui.open_url",        # 「没装」那两档上的「去官网看安装指南」→ https://sli.dev/guide/
 ]
+
+# 官方插件仓库。同一份 latest.json 同时描述四个官方插件。
+[update]
+manifest = "https://github.com/Nota-MD/Nota-plugins/releases/latest/download/latest.json"
 
 # ── 开发服务器 ────────────────────────────────────────────────────────────
 #

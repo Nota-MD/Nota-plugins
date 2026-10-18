@@ -4,9 +4,9 @@
     "minimum": "0.5.0-beta"
   },
   "plugins": {
-    "nota.ai": "0.1.0",
-    "nota.git": "0.1.0",
-    "nota.slidev": "0.1.0",
-    "nota.stats": "0.5.0"
+    "nota.ai": "0.1.1",
+    "nota.git": "0.1.1",
+    "nota.slidev": "0.1.1",
+    "nota.stats": "0.5.1"
   }
 }

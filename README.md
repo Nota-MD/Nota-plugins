@@ -84,7 +84,11 @@ Packages and release notes are published under
 [Releases](https://github.com/Nota-MD/Nota-plugins/releases).
 
 Machine-readable release metadata is published in [`latest.json`](latest.json). Consumers
-should ignore unknown fields.
+should ignore unknown fields. Every GitHub Release uploads this file as `latest.json`;
+installed extensions read
+`https://github.com/Nota-MD/Nota-plugins/releases/latest/download/latest.json` when they
+declare that URL in `[update] manifest`. A release may be labelled beta while still being
+GitHub's latest release; this is required for the stable latest-manifest URL to advance.
 
 ## Contributing
 

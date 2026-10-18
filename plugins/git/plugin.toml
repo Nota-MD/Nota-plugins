@@ -19,7 +19,7 @@
 [plugin]
 id          = "nota.git"
 name        = "Git version control"
-version     = "0.1.0"
+version     = "0.1.1"
 api         = 2
 
 description = "See changes, compare diffs and commit. Uses the system git command and respects your gitconfig and hooks."
@@ -40,3 +40,7 @@ capabilities = [
   "ui.panel",        # 右侧那块面板：分支名 + 改动列表 + 提交按钮
   "ui.menu",         # 「插件」菜单里的「提交…」与「刷新改动」
 ]
+
+# 官方插件仓库。宿主只更新清单里 id 与当前插件相同的项。
+[update]
+manifest = "https://github.com/Nota-MD/Nota-plugins/releases/latest/download/latest.json"

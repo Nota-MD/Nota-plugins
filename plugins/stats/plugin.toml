@@ -40,7 +40,7 @@
 [plugin]
 id          = "nota.stats"
 name        = "Writing Stats"
-version     = "0.5.0"
+version     = "0.5.1"
 api         = 2
 
 description = "Track a writing session like a sports watch: start, pause, stop. A big number shows words per minute, with a curve below that rises and falls over time. When you are done you can turn the session (or the day) into a share card."
@@ -64,6 +64,10 @@ capabilities = [
   #    ⚠️ 声明 `[[settings]]` 而没申请它，清单直接判不合法。
   "settings.own",    # 窗口秒数那根滑杆（nota.settings ＋ 下面的 [[settings]]）
 ]
+
+# 官方插件仓库。更新包仍须通过 SHA-256 与包签名校验。
+[update]
+manifest = "https://github.com/Nota-MD/Nota-plugins/releases/latest/download/latest.json"
 
 # ── 请宿主画的那一格设置（2026-10-04 加）────────────────────────────────
 #

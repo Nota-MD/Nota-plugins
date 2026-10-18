@@ -96,6 +96,10 @@ python3 tools/pack-plugin.py plugins/git
 官方拓展包从 [Releases](https://github.com/Nota-MD/Nota-plugins/releases) 下载。
 
 机器可读的版本与下载地址同时发布在 [`latest.json`](latest.json)；使用方可忽略其中不认识的字段。
+每个 GitHub Release 都会附带 `latest.json`。已安装拓展在清单的 `[update] manifest`
+中声明 `https://github.com/Nota-MD/Nota-plugins/releases/latest/download/latest.json`
+后即可检查更新。版本字符串可以带 beta，但 GitHub Release 需要作为 latest 发布，
+这样固定地址才会指向新版本。
 
 ## 规矩（照主仓库同一套，别松）
 
