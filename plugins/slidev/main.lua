@@ -458,15 +458,15 @@ local function running_blocks(s)
       kind = "buttons",
       items = {
         { label = T("Stop preview"), command = "stop" },
-        -- 全屏演示、演讲者视图（双屏）只有真浏览器有，嵌在面板里的 iframe
-        -- 两样都做不到。地址还是宿主填的那个（插件交不出别的）。
-        { label = T("Open in browser"), command = "open_browser" },
+        -- 内嵌 iframe 现在允许 Slidev 自己请求全屏；双屏演讲者视图仍由
+        -- 系统浏览器负责。地址还是宿主填的那个（插件交不出别的）。
+        { label = T("Present in browser"), command = "open_browser", style = "primary" },
       },
     },
     {
       kind = "text",
       tone = "muted",
-      text = T("Edits re-render automatically (Slidev's own hot reload). Only one screen is drawn here; press “Open in browser” when you present full-screen."),
+      text = T("Edits re-render automatically (Slidev's own hot reload). Use Slidev's full-screen control here, or present in a browser for speaker view."),
     },
   }
 end
@@ -618,6 +618,9 @@ local function do_start(nota, force)
   last_error = nil
   nota.ui.notify(T("Preview started (port %d)", res.port), "success")
   nota.ui.refresh("preview")
+  -- Present the running deck in the editor-wide panel instead of leaving it
+  -- cramped in the dock. The user can still go back to the document.
+  nota.ui.review("preview")
   return { ok = true, port = res.port, url = res.url }
 end
 
@@ -631,6 +634,7 @@ local function do_stop(nota, silent)
       nota.ui.notify(T("Preview stopped"), "info")
     end
     nota.ui.refresh("preview")
+    nota.ui.review(nil)
   elseif not silent then
     nota.ui.notify(T("The preview is not running"), "warn")
   end

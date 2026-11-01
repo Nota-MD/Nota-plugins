@@ -1,0 +1,23 @@
+[plugin]
+id          = "nota.graph"
+name        = "Knowledge Graph"
+version     = "0.1.0"
+api         = 2
+
+description = "Show notes and the links between them in an interactive graph."
+license     = "BSD-2-Clause"
+authors     = ["Leo Lee"]
+entry       = "main.lua"
+
+langs = ["zh-CN", "en"]
+
+capabilities = [
+  "document.read",
+  "fs.read",
+  "ui.notify",
+  "ui.panel",
+  "ui.menu",
+]
+
+[update]
+manifest = "https://github.com/Nota-MD/Nota-plugins/releases/latest/download/latest.json"

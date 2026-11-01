@@ -1,0 +1,21 @@
+[plugin]
+id          = "nota-md.vim"
+name        = "Vim key profiles"
+version     = "0.1.0"
+api         = 2
+
+description = "Modern Vim or Classic BSD vi input: motions, operators, text objects, registers, macros, search, Ex commands, JSON profiles and vimrc-style mappings."
+license     = "BSD-2-Clause"
+authors     = ["Leo Lee"]
+entry       = "main.lua"
+langs       = ["en", "zh-CN"]
+
+capabilities = [
+  "editor.input",
+  "settings.own",
+  "data.own",
+  "ui.panel",
+]
+
+[update]
+manifest = "https://github.com/Nota-MD/Nota-plugins/releases/latest/download/latest.json"

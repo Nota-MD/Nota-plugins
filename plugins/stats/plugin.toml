@@ -40,10 +40,10 @@
 [plugin]
 id          = "nota.stats"
 name        = "Writing Stats"
-version     = "0.5.1"
+version     = "0.6.0"
 api         = 2
 
-description = "Track a writing session like a sports watch: start, pause, stop. A big number shows words per minute, with a curve below that rises and falls over time. When you are done you can turn the session (or the day) into a share card."
+description = "Track a writing session like a sports watch: start, pause, stop. Turn a session, a day or the long-term record into an international-style share card with author identity and an optional project QR code."
 license     = "BSD-2-Clause"
 authors     = ["Leo Lee"]
 entry       = "main.lua"

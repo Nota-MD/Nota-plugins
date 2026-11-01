@@ -125,6 +125,7 @@ local function make_nota(opts)
         return spec.id
       end,
       refresh = function() end,
+      review = function(id) box.review = id end,
       notify = function() end,
     },
     command = { register = function(name, fn) box.cmds[name] = fn end },

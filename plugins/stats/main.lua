@@ -849,6 +849,9 @@ function M.on_load(nota)
   nota.command.register("share_round", function()
     if share.can_share(share_ctx(), "round") then
       share_scope = "round"
+      nota.ui.refresh(PANEL_ID)
+      nota.ui.review(PANEL_ID)
+      return { ok = true }
     end
     nota.ui.refresh(PANEL_ID)
     return { ok = true }
@@ -857,6 +860,9 @@ function M.on_load(nota)
   nota.command.register("share_day", function()
     if share.can_share(share_ctx(), "day") then
       share_scope = "day"
+      nota.ui.refresh(PANEL_ID)
+      nota.ui.review(PANEL_ID)
+      return { ok = true }
     end
     nota.ui.refresh(PANEL_ID)
     return { ok = true }
@@ -865,6 +871,9 @@ function M.on_load(nota)
   nota.command.register("share_long", function()
     if share.can_share(share_ctx(), "long") then
       share_scope = "long"
+      nota.ui.refresh(PANEL_ID)
+      nota.ui.review(PANEL_ID)
+      return { ok = true }
     end
     nota.ui.refresh(PANEL_ID)
     return { ok = true }
@@ -873,6 +882,7 @@ function M.on_load(nota)
   nota.command.register("share_close", function()
     share_scope = nil
     nota.ui.refresh(PANEL_ID)
+    nota.ui.review(nil)
     return { ok = true }
   end)
 
