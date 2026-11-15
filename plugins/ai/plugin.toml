@@ -16,7 +16,7 @@
 [plugin]
 id          = "nota.ai"
 name        = "AI assistant"
-version     = "0.1.1"
+version     = "0.1.2"
 api         = 2
 
 description = "Writing assistant: polish, continue, summarize, translate. Bring your own API key."
@@ -102,6 +102,6 @@ step    = 1000
 [[settings]]
 key        = "stream"
 kind       = "toggle"
-label      = "Show answers as they are written"
-help       = "Off means the answer appears all at once. Turn it off if your service does not support streaming."
+label      = "Stream output"
+help       = "Show text as the model generates it. Nota falls back to a normal response when an endpoint ignores or rejects streaming."
 default_on = true

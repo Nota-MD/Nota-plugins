@@ -241,6 +241,38 @@ local nota = {
         cb(WHOLE_TEXT)
         return { ok = true, code = 200, text = WHOLE_TEXT, json = json_decode(WHOLE_TEXT), chunks = 1 }
       end
+      if SCENARIO == "rejectstream" then
+        return { ok = false, error = "streaming is not supported" }
+      end
+      if SCENARIO == "legacytext" then
+        local body = table.concat({
+          'data: {"choices":[{"text":"legacy "}]}\n\n',
+          'data: {"choices":[{"text":"text"}]}\n\n',
+          "data: [DONE]\n\n",
+        })
+        for _, chunk in ipairs(chop(body, 5)) do cb(chunk) end
+        return { ok = true, code = 200, text = "", chunks = #chop(body, 5) }
+      end
+      if SCENARIO == "anthropic" then
+        local body = table.concat({
+          'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"claude "}}\n\n',
+          'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"text"}}\n\n',
+          "data: [DONE]\n\n",
+        })
+        for _, chunk in ipairs(chop(body, 6)) do cb(chunk) end
+        return { ok = true, code = 200, text = "", chunks = #chop(body, 6) }
+      end
+      if SCENARIO == "responses" then
+        local body = 'data: {"type":"response.output_text.delta","delta":"response text"}\n\n'
+        for _, chunk in ipairs(chop(body, 4)) do cb(chunk) end
+        return { ok = true, code = 200, text = "", chunks = #chop(body, 4) }
+      end
+      if SCENARIO == "ndjson" then
+        local body = '{"message":{"role":"assistant","content":"ollama "}}\n'
+          .. '{"message":{"role":"assistant","content":"text"},"done":true}'
+        for _, chunk in ipairs(chop(body, 9)) do cb(chunk) end
+        return { ok = true, code = 200, text = "", chunks = #chop(body, 9) }
+      end
       if SCENARIO == "cut" then
         -- 答到一半连接被对方关掉。
         for _, c in ipairs(chop(sse_frames({ "写到一半" }), 7)) do
@@ -301,6 +333,34 @@ do
   eq(r.ok, true, "ok")
   eq(r.text, "整段回的那句话", "正文")
   eq(#PUSHED, 0, "一个字都没流过面板 ⇒ 一次都不惊动前端")
+end
+
+-- ── (2b) Compatible streaming shapes ─────────────────────────────────────
+for _, scenario in ipairs({
+  { name = "legacytext", text = "legacy text" },
+  { name = "anthropic", text = "claude text" },
+  { name = "responses", text = "response text" },
+  { name = "ndjson", text = "ollama text" },
+}) do
+  print("(2b) compatible stream shape: " .. scenario.name)
+  reset(scenario.name)
+  do
+    local r = send_once()
+    eq(r.ok, true, "ok")
+    eq(r.text, scenario.text, "text")
+    eq(#PUSHED >= 2, true, "stream reached the panel")
+    eq(PUSHED[#PUSHED], "", "completion marker clears the preview")
+  end
+end
+
+print("(2c) rejected stream request falls back to a normal request")
+reset("rejectstream")
+do
+  local r = send_once()
+  eq(r.ok, true, "ok")
+  eq(r.text, "整段回的那句话", "text")
+  eq(POSTED, 1, "normal request count")
+  eq(#PUSHED, 0, "failed stream did not push partial text")
 end
 
 -- ── (3) `[DONE]` 之后的字不许进来 ─────────────────────────────────────────

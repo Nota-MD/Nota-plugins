@@ -31,7 +31,7 @@ Nota 那四个内置插件的**源码与发布仓库**（2026-10-09 从主仓库
 | 仓库 | 职责 |
 |---|---|
 | `Nota`（编辑器） | 宿主程序、Lua 运行时与 `nota.*` API（`src-tauri/src/lua/`）、装卸 / 信任 / 包格式、前端的面板 DSL（`src/ui/panel-nodes.ts`）、以及插件作者文档（`docs/11`–`13`） |
-| `Nota-plugins`（本仓库） | 四个插件的**源码**（`plugins/`）、打包工具、插件自己的**无头测试**、开发那两个要外部程序的插件时用的假服务 |
+| `Nota-plugins`（本仓库） | 官方插件的**源码**（`plugins/`）、打包工具、插件自己的**无头测试**、开发那两个要外部程序的插件时用的假服务 |
 
 ⚠️ **主仓库里没有一份副本**：改插件只在本仓库改。宿主怎么找到它们，见下。
 
@@ -59,23 +59,27 @@ Nota 那四个内置插件的**源码与发布仓库**（2026-10-09 从主仓库
 - `tools/pack-plugin.py` —— 把一个插件目录打成 `.nota-plugin`（可签名）
 - `tools/stats-state-test.lua` —— 写作统计的**无头状态机测试**（桩掉 `nota`，时钟由测试推）
 - `tools/ai-stream-test.lua` —— AI 插件流式那一条路的无头测试
+- `tools/backlinks-test.lua` —— 反向链接解析与目标解析测试
+- `tools/cjk-spacing-test.lua` —— 中英文间距规则、保护区间与设置测试
 - `tools/git-panel-test.lua` —— Git 插件的**面板与选择状态**无头测试（2026-10-09 加：
   那张 `attempt to get length of a nil value (global 'picked')` 的截图就是它的来由）
 - `tools/undeclared-globals.lua` —— 静态扫"没声明就赋值"的名字（＝ 想写全局）
 - `tools/stub-openai.py` / `tools/stub-slidev.py` —— 开发那两个插件时用的假服务
-- `tools/check.sh` —— 本仓库自己的闸（行数 ＋ 上面三份无头测试 ＋ 没声明就赋值的名字）
-- `compatibility.json` / `tools/check-compatibility.sh` —— 宿主 API 与四个插件版本的发布契约
+- `tools/check.sh` —— 本仓库自己的闸（行数 ＋ 上述无头测试 ＋ 没声明就赋值的名字）
+- `compatibility.json` / `tools/check-compatibility.sh` —— 宿主 API 与所有插件版本的发布契约
 - `.github/workflows/verify.yml` —— push / PR 自动跑兼容契约与全部插件自检
 
 ## 当前插件
 
 | 插件 | id | 版本 | 说明 |
 |---|---|---|---|
-| AI 助手 | `nota.ai` | 0.1.0 | 润色 / 续写 / 总结 / 翻译；自己的 API 密钥 |
+| AI 助手 | `nota.ai` | 0.1.2 | 润色 / 续写 / 总结 / 翻译；自己的 API 密钥 |
+| 反向链接 | `nota.backlinks` | 0.1.0 | 查看当前文档的入链、出链与未解析链接 |
+| 中英文间距 | `nota.cjk-spacing` | 0.1.0 | 按设置统一或移除中文、日文与英文之间的空格 |
 | Git 版本控制 | `nota.git` | 0.1.0 | 改动、差异、提交；走系统 `git` |
 | 知识图谱 | `nota.graph` | 0.1.0 | 用交互式关系图查看笔记及 `[[wiki]]`、相对 Markdown 链接（[说明](plugins/graph/README.md)） |
 | Slidev 演示 | `nota.slidev` | 0.1.0 | 把当前文档当幻灯片放出来 |
-| 写作统计 | `nota.stats` | 0.5.0 | 像运动手表那样记录写作速度与长期活跃度；导出带作者身份和可选官网二维码的国际主义风格分享图 |
+| 写作统计 | `nota.stats` | 0.7.0 | 像运动手表那样记录写作速度与长期活跃度；导出带作者身份、自定义文案、可选日期和官网二维码的国际主义风格分享图 |
 | Vim 键位 | `nota-md.vim` | 0.1.0 | 普通/插入/可视模式、移动与操作符、寄存器、宏、搜索、Ex 命令、JSON 配置档和 vimrc 风格映射 |
 
 ## 怎么跑
@@ -83,10 +87,10 @@ Nota 那四个内置插件的**源码与发布仓库**（2026-10-09 从主仓库
 ⚠️ 这台机器上 `lua` 不在宿主里，在容器 `tauri-dev` 里（与主仓库同一套工装）：
 
 ```sh
-# 闸（行数 + 三份无头测试 + 没声明就赋值的名字）
+# 闸（行数 + 无头测试 + 没声明就赋值的名字）
 bash tools/check.sh
 
-# 单跑写作统计那一份（ALL PASS（203 条断言））
+# 单跑写作统计那一份（ALL PASS（208 条断言））
 podman exec -u 1000 -w "$PWD" tauri-dev lua tools/stats-state-test.lua
 
 # 打包一个插件（输出 <插件目录>/dist/<id>-<版本>.nota-plugin）

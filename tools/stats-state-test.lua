@@ -898,6 +898,32 @@ s = step(box13, 2000, 100)
 eq(fields(s)["速度窗口"], "最近 5 秒", "读不到那一号对象也照常按默认 5 秒算")
 eq(next(fields(s)) ~= nil, true, "小字那一块照发（不是整块消失）")
 
+print("-- (25) 自定义分享图文案与日期开关 --")
+local _, box14 = load({
+  time = true,
+  data = true,
+  settings = {
+    window_seconds = 5,
+    share_title = "我的周记",
+    share_subtitle = "MY WRITING",
+    share_metric_label = "手速",
+    share_note = "今晚继续",
+    share_show_date = false,
+  },
+})
+box14.cmds.start()
+s = step(box14, 2000, 100)
+s = step(box14, 4000, 120)
+box14.cmds.stop()
+box14.cmds.share_round()
+s = step(box14, 4000, 120)
+sh = blk(s, "share")
+eq(sh.title, "我的周记", "custom title")
+eq(sh.subtitle, "MY WRITING", "custom subtitle")
+eq(sh.label, "手速", "custom metric label")
+eq(sh.foot, "今晚继续", "custom footer note")
+eq(sh.date, "", "date toggle hides the date")
+
 print("")
 if fails == 0 then
   print("ALL PASS（" .. checks .. " 条断言）")

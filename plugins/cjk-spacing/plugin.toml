@@ -1,0 +1,57 @@
+[plugin]
+id          = "nota.cjk-spacing"
+name        = "CJK Spacing"
+version     = "0.1.0"
+api         = 2
+
+description = "Insert spaces between Chinese or Japanese text and Latin letters or digits without touching code, math, link targets, HTML, or front matter."
+license     = "BSD-2-Clause"
+authors     = ["Leo Lee"]
+entry       = "main.lua"
+langs       = ["en", "zh-CN"]
+
+capabilities = [
+  "document.read",
+  "document.write",
+  "ui.notify",
+  "ui.menu",
+  "settings.own",
+]
+
+[update]
+manifest = "https://github.com/Nota-MD/Nota-plugins/releases/latest/download/latest.json"
+
+[[settings]]
+key     = "cjk_to_latin"
+kind    = "range"
+label   = "Spaces from CJK to Latin"
+help    = "0 removes existing spacing; values above 0 normalize the gap to exactly this many ordinary spaces."
+min     = 0
+max     = 4
+default = 1
+step    = 1
+
+[[settings]]
+key     = "latin_to_cjk"
+kind    = "range"
+label   = "Spaces from Latin to CJK"
+help    = "0 removes existing spacing; values above 0 normalize the gap to exactly this many ordinary spaces."
+min     = 0
+max     = 4
+default = 1
+step    = 1
+
+[[settings]]
+key        = "include_japanese"
+kind       = "toggle"
+label      = "Include Japanese kana"
+help       = "When off, only Chinese ideographs participate in CJK spacing."
+default_on = true
+
+[[settings]]
+key        = "include_numbers"
+kind       = "toggle"
+label      = "Include digits and percent signs"
+help       = "When off, only Latin letters participate; numbers and percentages stay unchanged."
+default_on = true
+

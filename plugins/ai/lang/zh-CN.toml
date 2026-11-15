@@ -96,6 +96,7 @@ description = "写作助手：润色、续写、总结、翻译。需要自备 A
 "The request failed for an unknown reason." = "请求失败了，原因不明。"
 "That message is gone" = "那条消息已经不在了"
 "The endpoint streamed a reply but it had no text in it." = "接口按流式回了，但里面一个字都没有。"
+"The endpoint returned a streaming error: %s" = "接口返回了流式错误：%s"
 
 # ── 2026-10-10：现代对话框那一批（标签页 ＋ 输入卡片 ＋ 设置搬走了）──────────
 #
@@ -117,8 +118,8 @@ description = "写作助手：润色、续写、总结、翻译。需要自备 A
 # ⚠️ 下面四条来自 `plugin.toml` 的 `[[settings]]`（宿主画的设置页上用），
 # 不是 `.lua` 里的字面量——`tools/i18n-check.sh` 两处都扫。
 "Characters the AI may read" = "AI 可读的字符上限"
-"Show answers as they are written" = "边生成边显示"
+"Stream output" = "流式输出"
 "Sent only to the address above. Local models (Ollama / LM Studio) usually need no key — any value will do." = "只发给上面那个地址。本机模型（Ollama / LM Studio）通常不要密钥，随便填一个即可。"
-"Off means the answer appears all at once. Turn it off if your service does not support streaming." = "关着时回答一次性出现。你的服务不支持流式就关掉它。"
+"Show text as the model generates it. Nota falls back to a normal response when an endpoint ignores or rejects streaming." = "模型生成时逐步显示正文；接口忽略或拒绝流式请求时自动改用普通响应。"
 "An OpenAI-compatible URL including /v1. For a local service, http://127.0.0.1:11434/v1 works." = "OpenAI 兼容的地址（含 /v1）。本机服务可以填 http://127.0.0.1:11434/v1"
 "The name from your provider's documentation." = "填服务商文档里那个名字。"

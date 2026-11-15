@@ -152,10 +152,31 @@ function M.round_last_minute(mins)
   return to_i
 end
 
+--- Apply user-authored copy to a freshly built card.
+local function with_share_options(ctx, card)
+  local opt = ctx.share_options or {}
+  if opt.title and opt.title ~= "" then
+    card.title = opt.title
+  end
+  if opt.subtitle and opt.subtitle ~= "" then
+    card.subtitle = opt.subtitle
+  end
+  if opt.metric_label and opt.metric_label ~= "" then
+    card.label = opt.metric_label
+  end
+  if opt.note and opt.note ~= "" then
+    card.foot = opt.note
+  end
+  if opt.show_date == false then
+    card.date = ""
+  end
+  return card
+end
+
 --- 「这一轮」那张卡片的字段。
 function M.round_card(ctx)
   local series = ctx.spread(ctx.round_mins, 0, M.round_last_minute(ctx.round_mins))
-  return {
+  return with_share_options(ctx, {
     kind = "share",
     title = T("Writing Stats"),
     subtitle = "Writing Stats",
@@ -173,7 +194,7 @@ function M.round_card(ctx)
     },
     foot = string.format(T("This round you wrote %s words"), ctx.group_text(ctx.total_add)),
     file = "nota-stats-round-" .. ctx.stamp_text(ctx.nowinfo) .. ".png",
-  }
+  })
 end
 
 --- 「今日」那张卡片的字段。今天没账就没这张卡（调用方会拦在前面）。
@@ -189,7 +210,7 @@ function M.day_card(ctx)
   if #axis < 2 then
     axis = ctx.three_ticks(r.first or 0, series.bucket, #series.pts, ctx.clock_tick)
   end
-  return {
+  return with_share_options(ctx, {
     kind = "share",
     title = T("Writing Stats"),
     subtitle = "Writing Stats",
@@ -207,7 +228,7 @@ function M.day_card(ctx)
     },
     foot = string.format(T("Today you wrote %s words"), ctx.group_text(r.words)),
     file = "nota-stats-day-" .. r.ymd .. ".png",
-  }
+  })
 end
 
 -- ── 长期那本账（热力图，2026-09-27）──────────────────────────────────────
@@ -220,7 +241,7 @@ end
 
 --- 长期那张分享卡。`st` 是 `main.lua` 算好的那份统计（`long_stats()`）。
 function M.long_card(ctx, st)
-  return ctx.long.card(ctx.days, st, ctx.nowinfo)
+  return with_share_options(ctx, ctx.long.card(ctx.days, st, ctx.nowinfo))
 end
 
 --- 那条热力图上的日格字符串。

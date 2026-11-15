@@ -509,6 +509,30 @@ end
 
 local share = require("share")
 
+--- Read one text setting without trusting its file representation.
+local function setting_text(key)
+  if not saved_nota or not saved_nota.settings then
+    return ""
+  end
+  local value = saved_nota.settings.get(key)
+  if type(value) ~= "string" then
+    return ""
+  end
+  return value:gsub("[\0-\31\127]", ""):match("^%s*(.-)%s*$")
+end
+
+--- Read one boolean setting, with a caller-provided fallback.
+local function setting_on(key, fallback)
+  if not saved_nota or not saved_nota.settings then
+    return fallback
+  end
+  local value = saved_nota.settings.get(key)
+  if type(value) == "boolean" then
+    return value
+  end
+  return fallback
+end
+
 --- 一张"这一屏该摆什么"的表，给 `share.lua` 那几个函数读。
 -- ⚠️ 同 `card_ctx`：里面**全是取值**（外加几个纯函数），那边一个字段都不往回写。
 -- ⚠️ 每次要用现搭一张（面板一拍一张）：比一次 Lua 表构造的开销可以忽略，换来的是
@@ -540,6 +564,13 @@ local function share_ctx()
     clock_tick = ticks.clock_tick,
     day_ticks = ticks.day_ticks,
     minor_per_gap = ticks.minor_per_gap,
+    share_options = {
+      title = setting_text("share_title"),
+      subtitle = setting_text("share_subtitle"),
+      metric_label = setting_text("share_metric_label"),
+      note = setting_text("share_note"),
+      show_date = setting_on("share_show_date", true),
+    },
   }
 end
 

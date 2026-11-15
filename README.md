@@ -30,11 +30,13 @@ capabilities declared in its `plugin.toml`.
 
 | Extension | id | Version | Purpose |
 |---|---|---:|---|
-| AI assistant | `nota.ai` | 0.1.1 | Rewrite, continue, summarize and translate with your own API configuration |
+| AI assistant | `nota.ai` | 0.1.2 | Rewrite, continue, summarize and translate with your own API configuration |
+| Backlinks | `nota.backlinks` | 0.1.0 | List incoming, outgoing and unresolved links for the current note |
+| CJK spacing | `nota.cjk-spacing` | 0.1.0 | Normalize configurable spaces between Chinese or Japanese text and Latin text |
 | Git | `nota.git` | 0.1.1 | Status, diffs, history and commits using system Git |
 | Knowledge graph | `nota.graph` | 0.1.0 | Explore notes and their wiki or relative Markdown links in an interactive graph ([details](plugins/graph/README.md)) |
 | Slidev | `nota.slidev` | 0.1.2 | Preview the current Markdown document as slides |
-| Writing statistics | `nota.stats` | 0.6.0 | Track writing speed and long-term activity; export international-style cards with author identity and an optional website QR code |
+| Writing statistics | `nota.stats` | 0.7.0 | Track writing speed and long-term activity; export international-style cards with author identity, custom card copy, an optional date and a website QR code |
 | Vim keys | `nota-md.vim` | 0.1.0 | Normal/insert/visual modes, motions, operators, registers, macros, search, Ex commands, JSON profiles and vimrc-style mappings |
 
 ## Install

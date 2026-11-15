@@ -1,3 +1,6 @@
+name = "知识图谱"
+description = "用交互式关系图查看笔记和它们之间的链接。"
+
 "Open a folder or a saved Markdown document to build the graph." = "打开一个文件夹或已保存的 Markdown 文档，才能生成图谱。"
 "Knowledge graph" = "知识图谱"
 "Try again" = "重新扫描"

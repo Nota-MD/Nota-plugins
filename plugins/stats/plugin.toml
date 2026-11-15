@@ -40,7 +40,7 @@
 [plugin]
 id          = "nota.stats"
 name        = "Writing Stats"
-version     = "0.6.0"
+version     = "0.7.0"
 api         = 2
 
 description = "Track a writing session like a sports watch: start, pause, stop. Turn a session, a day or the long-term record into an international-style share card with author identity and an optional project QR code."
@@ -93,3 +93,43 @@ max     = 60
 default = 5
 step    = 1
 unit    = "s"
+
+# Share-card copy is intentionally host-rendered settings. The plugin consumes
+# these values whenever it builds a round, day, or long-term card.
+[[settings]]
+key          = "share_title"
+kind         = "text"
+label        = "Share card title"
+help         = "Overrides the title on every share card. Leave empty to use the report's normal title."
+placeholder  = "Writing Stats"
+default_text = ""
+
+[[settings]]
+key          = "share_subtitle"
+kind         = "text"
+label        = "Share card subtitle"
+help         = "Small uppercase line above the author. Leave empty to use the normal report subtitle."
+placeholder  = "Writing Stats"
+default_text = ""
+
+[[settings]]
+key          = "share_metric_label"
+kind         = "text"
+label        = "Share card metric label"
+help         = "Overrides the label above the large number. Leave empty to use the scope-specific label."
+placeholder  = "Round average"
+default_text = ""
+
+[[settings]]
+key          = "share_note"
+kind         = "text"
+label        = "Share card note"
+help         = "Replaces the generated summary sentence in the footer. Leave empty to keep the automatic summary."
+default_text = ""
+
+[[settings]]
+key         = "share_show_date"
+kind        = "toggle"
+label       = "Show date on share cards"
+help        = "Turn this off when sharing a screenshot without exposing when it was written."
+default_on  = true

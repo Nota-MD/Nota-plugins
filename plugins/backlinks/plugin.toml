@@ -1,0 +1,23 @@
+[plugin]
+id          = "nota.backlinks"
+name        = "Backlinks"
+version     = "0.1.0"
+api         = 2
+
+description = "List the notes that link to the current note, the notes it links to, and unresolved links."
+license     = "BSD-2-Clause"
+authors     = ["Leo Lee"]
+entry       = "main.lua"
+langs       = ["en", "zh-CN"]
+
+capabilities = [
+  "document.read",
+  "fs.read",
+  "ui.notify",
+  "ui.panel",
+  "ui.menu",
+]
+
+[update]
+manifest = "https://github.com/Nota-MD/Nota-plugins/releases/latest/download/latest.json"
+

@@ -137,12 +137,86 @@ end
 ---
 --- ⚠️ 4xx/5xx **不是**宿主层面的错误（宿主故意关掉了 `http_status_as_error`）：
 --- 配额用完、密钥不对这类话就写在响应体里，得读出来给用户看。
+local function text_part(value)
+  if type(value) == "string" then
+    return value
+  end
+  if type(value) ~= "table" then
+    return nil
+  end
+  if type(value.text) == "string" then
+    return value.text
+  end
+  if type(value.content) == "string" then
+    return value.content
+  end
+  if type(value.content) == "table" then
+    local parts = {}
+    for _, part in ipairs(value.content) do
+      local text = text_part(part)
+      if text then
+        parts[#parts + 1] = text
+      end
+    end
+    if #parts > 0 then
+      return table.concat(parts)
+    end
+  end
+  return nil
+end
+
+local function reply_content(body2)
+  if type(body2) ~= "table" then
+    return nil
+  end
+  local choices = body2.choices
+  if type(choices) == "table" and type(choices[1]) == "table" then
+    local choice = choices[1]
+    if type(choice.message) == "table" then
+      local content = text_part(choice.message.content)
+      if content then
+        return content
+      end
+    end
+    local content = text_part(choice.text or choice.delta)
+    if content then
+      return content
+    end
+  end
+  if type(body2.output_text) == "string" then
+    return body2.output_text
+  end
+  if type(body2.message) == "table" then
+    local content = text_part(body2.message.content)
+    if content then
+      return content
+    end
+  end
+  if type(body2.response) == "table" and type(body2.response.output_text) == "string" then
+    return body2.response.output_text
+  end
+  return nil
+end
+
+local function reply_error(body2)
+  if type(body2) ~= "table" then
+    return nil
+  end
+  if type(body2.error) == "table" then
+    return tostring(body2.error.message or body2.error.type or "")
+  end
+  if type(body2.error) == "string" then
+    return body2.error
+  end
+  if body2.type == "error" then
+    return tostring(body2.message or body2.detail or "")
+  end
+  return nil
+end
+
 local function read_reply(r)
   if r.code ~= 200 then
-    local detail = ""
-    if type(r.json) == "table" and type(r.json.error) == "table" then
-      detail = tostring(r.json.error.message or "")
-    end
+    local detail = reply_error(r.json) or ""
     if detail == "" then
       -- 不是 JSON（网关的 HTML 错误页）就原样端前 300 字：真正的病因写在里面，
       -- Nota 编不出比它更准的话。
@@ -158,11 +232,7 @@ local function read_reply(r)
     }
   end
 
-  local choices = r.json.choices
-  local content = nil
-  if type(choices) == "table" and type(choices[1]) == "table" and type(choices[1].message) == "table" then
-    content = choices[1].message.content
-  end
+  local content = reply_content(r.json)
   if type(content) ~= "string" or content == "" then
     -- 形状对不上时**说清楚是哪儿对不上**：只报"生成失败"的话，用户和
     -- 插件作者都只能猜是网络问题还是接口换了。
@@ -213,29 +283,48 @@ local function sse_body(line)
   return string.match(line, "^data:%s*(.*)$")
 end
 
---- 从 SSE 的一小段 JSON 里取出那几个新字。
----
---- ⚠️ 形状是 `choices[1].delta.content`——**不是**整段那条路的
---- `choices[1].message.content`。两个词差一个字母，抄错了的表现是**一个字都
---- 出不来**，而流式那条路上"没有字"和"还没开始写"长得一模一样。
+local function decoded(nota, payload)
+  local ok, value = pcall(function()
+    return nota.json.decode(payload)
+  end)
+  if not ok then
+    return nil
+  end
+  return value
+end
+
+--- Extract text from OpenAI, Responses, Anthropic, Ollama and compatible frames.
 local function delta_of(nota, payload)
-  local v = nota.json.decode(payload)
+  local v = decoded(nota, payload)
   if type(v) ~= "table" then
     return nil
   end
+  if type(v.delta) == "string" then
+    return v.delta
+  end
+  if type(v.delta) == "table" then
+    local content = text_part(v.delta)
+    if content then
+      return content
+    end
+  end
+  if type(v.text) == "string" and v.type == "response.output_text.delta" then
+    return v.text
+  end
   local choices = v.choices
-  if type(choices) ~= "table" or type(choices[1]) ~= "table" then
-    return nil
+  if type(choices) == "table" and type(choices[1]) == "table" then
+    local choice = choices[1]
+    local content = text_part(choice.delta)
+      or text_part(choice.text)
+      or text_part(choice.message)
+    if content then
+      return content
+    end
   end
-  local delta = choices[1].delta
-  if type(delta) ~= "table" then
-    return nil
+  if type(v.message) == "table" then
+    return text_part(v.message.content)
   end
-  local content = delta.content
-  if type(content) ~= "string" then
-    return nil
-  end
-  return content
+  return reply_content(v)
 end
 
 --- 发一次对话请求（**流式**那条路），边收边把"正在写的字"推给面板。
@@ -260,10 +349,54 @@ local function stream_request(nota, messages, on_delta)
   -- 宿主保证不劈开），所以只有"攒到换行"才算收到一整行。
   local buf = ""
   local acc = ""
-  local saw_data = false
+  local saw_frame = false
+  local saw_sse = false
   local done = false
+  local stream_error = nil
+  local last_sent = ""
   -- 上一次往外推的时刻。`-STREAM_PUSH_MS` 是为了让**第一段**立刻推出去。
   local last_push = -STREAM_PUSH_MS
+
+  local function consume_line(line)
+    line = string.gsub(line, "\r$", "")
+    local payload = sse_body(line)
+    if payload then
+      saw_sse = true
+    elseif string.match(line, "^%s*{") then
+      payload = line
+    else
+      return
+    end
+
+    payload = string.gsub(payload, "^%s+", "")
+    payload = string.gsub(payload, "%s+$", "")
+    if payload == "" then
+      return
+    end
+    if payload == "[DONE]" then
+      done = true
+      return
+    end
+
+    saw_frame = true
+    local value = decoded(nota, payload)
+    local failure = reply_error(value)
+    if failure and failure ~= "" then
+      stream_error = failure
+      return
+    end
+
+    local piece = delta_of(nota, payload)
+    if piece and piece ~= "" then
+      acc = acc .. piece
+      local now = util.now_ms(nota)
+      if now - last_push >= STREAM_PUSH_MS then
+        last_push = now
+        last_sent = acc
+        on_delta(acc)
+      end
+    end
+  end
 
   local spec = build_spec(env.url, env.key, env.model, messages, true)
   local r
@@ -277,28 +410,8 @@ local function stream_request(nota, messages, on_delta)
         end
         local line = string.sub(buf, 1, nl - 1)
         buf = string.sub(buf, nl + 1)
-        -- ⚠️ 行尾可能带一个 `\r`（SSE 的规矩就是 `\r\n` 结尾）。不掐掉的话
-        -- `data: {...}\r` 交到 JSON 解析器手上就是"多了一个控制字符"。
-        line = string.gsub(line, "\r$", "")
         if not done then
-          local payload = sse_body(line)
-          if payload == "[DONE]" then
-            -- ⚠️ 看到它**不喊停**：`[DONE]` 之后服务器自己会关连接，而回调
-            -- 返回 `false` 是"用户/插件要中断"那条路——那条路会让结果表上多出
-            -- 一个 `aborted`，我们这边并没有中断。这里只是不再往里收字。
-            done = true
-          elseif payload then
-            saw_data = true
-            local piece = delta_of(nota, payload)
-            if piece and piece ~= "" then
-              acc = acc .. piece
-              local now = util.now_ms(nota)
-              if now - last_push >= STREAM_PUSH_MS then
-                last_push = now
-                on_delta(acc)
-              end
-            end
-          end
+          consume_line(line)
         end
       end
       return true
@@ -318,7 +431,20 @@ local function stream_request(nota, messages, on_delta)
     }
   end
 
-  if not saw_data then
+  if not done and buf ~= "" and (saw_sse or saw_frame) then
+    consume_line(buf)
+  end
+
+  if stream_error then
+    return {
+      ok = false,
+      error = T("The endpoint returned a streaming error: %s", stream_error),
+      partial = acc,
+      stream_failed = true,
+    }
+  end
+
+  if not saw_frame then
     -- 一行 `data:` 都没有 ⇒ 对方**不认流式**，这份就是整段那种响应。
     -- 照整段那条路解一次（`ask` 那边看到 `ok` 就直接用了）。
     return read_reply(r)
@@ -335,6 +461,9 @@ local function stream_request(nota, messages, on_delta)
     }
   end
 
+  if acc ~= last_sent then
+    on_delta(acc)
+  end
   return { ok = true, text = acc, partial = acc }
 end
 

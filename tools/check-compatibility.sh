@@ -18,4 +18,4 @@ for dir in plugins/*; do
   [ "$got_api" = "$api" ] || { echo "FAIL $id api=$got_api 期望 $api" >&2; exit 1; }
 done
 
-echo "OK 官方插件兼容表：host api=$api，六个插件版本一致"
+echo "OK 官方插件兼容表：host api=$api，所有插件版本一致"
