@@ -87,3 +87,4 @@ description = "查看改动、比较差异、提交。走系统 git 命令，尊
 "(deleted)" = "（已删除）"
 "(new file)" = "（新文件）"
 "(%d more lines from this file are not drawn)" = "（这份还有 %d 行没画）"
+"you@example.com" = "you@example.com"

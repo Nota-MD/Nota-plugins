@@ -2,7 +2,7 @@
 id          = "nota-md.vim"
 name        = "Vim key profiles"
 version     = "0.1.0"
-api         = 2
+api         = "v2.3"
 
 description = "Modern Vim or Classic BSD vi input: motions, operators, text objects, registers, macros, search, Ex commands, JSON profiles and vimrc-style mappings."
 license     = "BSD-2-Clause"

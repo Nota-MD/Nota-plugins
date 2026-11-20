@@ -48,10 +48,10 @@ end
 --- 而且卡得莫名其妙（用户看到的是"Nota 变慢了"，不是" AI 插件在刷屏"）。
 --- 80 毫秒大约一秒 12 次，肉眼就是"一行一行往外冒"。
 ---
---- ⚠️ 计时用的是**墙钟**（`util.now_ms`），不是累加：宿主那边每次事件都带
---- 全文，推的间隔偶尔不均匀完全没关系——**丢一次推不影响最终结果**
----（收工时面板会拉一次真的内容，见 `chat.lua::M.send` 末尾）。
-local STREAM_PUSH_MS = 80
+--- Keep the preview close to the display refresh rate. Reasoning-only
+--- providers often finish their final answer in a short burst; a larger
+--- interval makes that burst look like one final replace.
+local STREAM_PUSH_MS = 32
 
 -- ── 请求 ──────────────────────────────────────────────────────────────────
 --
@@ -80,6 +80,7 @@ local STREAM_PUSH_MS = 80
 local function build_spec(url, key, model, messages, stream)
   return {
     url = url,
+    method = "POST",
     -- ⚠️ 模型慢。默认的 30 秒对长文生成不够，这里要的是宿主那个上限（180 秒）。
     --
     -- ⚠️ **它量的是"每一步"，不是"整件事"**（宿主 2026-10-10 改的口径）：DNS 解析、
@@ -327,6 +328,32 @@ local function delta_of(nota, payload)
   return reply_content(v)
 end
 
+--- Reasoning-only providers (DeepSeek current models) stream
+--- `delta.reasoning_content` before `delta.content`.
+local function reasoning_of(nota, payload)
+  local v = decoded(nota, payload)
+  if type(v) ~= "table" then
+    return nil
+  end
+  if type(v.reasoning_content) == "string" then
+    return v.reasoning_content
+  end
+  if type(v.delta) == "table" and type(v.delta.reasoning) == "string" then
+    return v.delta.reasoning
+  end
+  local choices = v.choices
+  if type(choices) == "table" and type(choices[1]) == "table" then
+    local choice = choices[1]
+    if type(choice.delta) == "table" and type(choice.delta.reasoning_content) == "string" then
+      return choice.delta.reasoning_content
+    end
+    if type(choice.reasoning_content) == "string" then
+      return choice.reasoning_content
+    end
+  end
+  return nil
+end
+
 --- 发一次对话请求（**流式**那条路），边收边把"正在写的字"推给面板。
 ---
 --- 返回形状与 `request` 完全一样，另外多一个 `partial`（已经收到的那些字，
@@ -351,6 +378,9 @@ local function stream_request(nota, messages, on_delta)
   local acc = ""
   local saw_frame = false
   local saw_sse = false
+  local saw_reasoning = false
+  local thinking_sent = false
+  local reasoning_acc = ""
   local done = false
   local stream_error = nil
   local last_sent = ""
@@ -386,11 +416,29 @@ local function stream_request(nota, messages, on_delta)
       return
     end
 
+    local reasoning = reasoning_of(nota, payload)
+    if reasoning and reasoning ~= "" then
+      saw_reasoning = true
+      if string.sub(reasoning, 1, #reasoning_acc) == reasoning_acc then
+        reasoning_acc = reasoning
+      else
+        reasoning_acc = reasoning_acc .. reasoning
+      end
+      local now = util.now_ms(nota)
+      if not thinking_sent or now - last_push >= STREAM_PUSH_MS then
+        thinking_sent = true
+        last_push = now
+        last_sent = T("Thinking…") .. "\n\n" .. reasoning_acc
+        on_delta(last_sent)
+      end
+    end
+
     local piece = delta_of(nota, payload)
     if piece and piece ~= "" then
+      local first_content = acc == ""
       acc = acc .. piece
       local now = util.now_ms(nota)
-      if now - last_push >= STREAM_PUSH_MS then
+      if first_content or now - last_push >= STREAM_PUSH_MS then
         last_push = now
         last_sent = acc
         on_delta(acc)
@@ -456,8 +504,11 @@ local function stream_request(nota, messages, on_delta)
     -- 那会白花一次钱，而且很可能还是空的。
     return {
       ok = false,
-      error = T("The endpoint streamed a reply but it had no text in it."),
+      error = saw_reasoning
+        and T("The model finished reasoning without returning final text.")
+        or T("The endpoint streamed a reply but it had no text in it."),
       partial = "",
+      stream_seen = true,
     }
   end
 
@@ -476,7 +527,7 @@ function M.ask(nota, messages, on_delta)
   end
 
   local r = stream_request(nota, messages, on_delta)
-  if r.ok or (r.partial or "") ~= "" then
+  if r.ok or (r.partial or "") ~= "" or r.stream_seen then
     return r
   end
   return request(nota, messages)

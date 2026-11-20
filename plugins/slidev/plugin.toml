@@ -22,7 +22,7 @@
 id          = "nota.slidev"
 name        = "Slidev Slides"
 version     = "0.1.2"
-api         = 2
+api         = "v2.3"
 
 description = "Play the current Markdown as slides. Runs your local Slidev and embeds the preview in the side panel."
 license     = "BSD-2-Clause"

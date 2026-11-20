@@ -16,8 +16,8 @@
 [plugin]
 id          = "nota.ai"
 name        = "AI assistant"
-version     = "0.1.2"
-api         = 2
+version     = "0.1.6"
+api         = "v2.3"
 
 description = "Writing assistant: polish, continue, summarize, translate. Bring your own API key."
 license     = "BSD-2-Clause"

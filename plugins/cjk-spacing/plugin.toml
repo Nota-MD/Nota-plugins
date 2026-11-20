@@ -2,7 +2,7 @@
 id          = "nota.cjk-spacing"
 name        = "CJK Spacing"
 version     = "0.1.0"
-api         = 2
+api         = "v2.3"
 
 description = "Insert spaces between Chinese or Japanese text and Latin letters or digits without touching code, math, link targets, HTML, or front matter."
 license     = "BSD-2-Clause"

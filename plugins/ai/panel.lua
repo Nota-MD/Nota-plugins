@@ -55,6 +55,7 @@ local show_closed = false
 local util = require("util")
 local chat = require("chat")
 local scope = require("scope")
+local personas = require("personas")
 
 local M = {}
 
@@ -571,7 +572,73 @@ function M.content(nota)
     }
   end
 
-  -- ⑤ 两张次要开关 ＋（摊开时）那两块。
+  -- ⑤ Preset editing stays directly below chat so it is discoverable without
+  -- importing a file first.
+  local imported = personas.load(nota)
+  local active_persona = personas.editor_state(nota)
+  if #imported > 0 then
+    local options = { { label = T("No persona"), value = "" } }
+    for _, item in ipairs(imported) do
+      options[#options + 1] = { label = item.label, value = item.id }
+    end
+    blocks[#blocks + 1] = {
+      kind = "select",
+      label = T("Persona"),
+      value = personas.active_id(nota),
+      options = options,
+      command = "select_persona",
+      arg = "persona",
+    }
+  end
+  blocks[#blocks + 1] = { kind = "heading", text = T("Custom preset") }
+  blocks[#blocks + 1] = {
+    kind = "text",
+    tone = "muted",
+    text = T("Edit the active preset below. Changes apply to future messages."),
+  }
+  blocks[#blocks + 1] = {
+    kind = "input",
+    arg = "text",
+    submit = "save_persona_prompt",
+    submit_label = T("Save instructions"),
+    value = active_persona.prompt,
+    placeholder = T("Write custom instructions…"),
+    hint = T("This becomes a system instruction. It is separate from your chat message."),
+    multiline = true,
+    rows = 10,
+    chips = {},
+  }
+  blocks[#blocks + 1] = {
+    kind = "input",
+    arg = "label",
+    submit = "save_persona_label",
+    submit_label = T("Save name"),
+    value = active_persona.label,
+    placeholder = T("Preset name"),
+    hint = "",
+    multiline = false,
+    chips = {},
+  }
+  if personas.active_id(nota) ~= "" then
+    blocks[#blocks + 1] = {
+      kind = "buttons",
+      items = {
+        {
+          label = T("Delete current persona"),
+          command = "delete_persona",
+          style = "danger",
+        },
+      },
+    }
+  end
+  blocks[#blocks + 1] = {
+    kind = "file",
+    label = T("Persona preset"),
+    buttonLabel = T("Import…"),
+    accept = ".json,.md,.txt,application/json,text/plain,text/markdown",
+    command = "import_persona",
+    arg = "file",
+  }
   for _, b in ipairs(more_blocks(nota, c)) do
     blocks[#blocks + 1] = b
   end

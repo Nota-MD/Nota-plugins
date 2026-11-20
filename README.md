@@ -30,7 +30,7 @@ capabilities declared in its `plugin.toml`.
 
 | Extension | id | Version | Purpose |
 |---|---|---:|---|
-| AI assistant | `nota.ai` | 0.1.2 | Rewrite, continue, summarize and translate with your own API configuration |
+| AI assistant | `nota.ai` | 0.1.6 | Rewrite, continue, summarize and translate with your own API configuration |
 | Backlinks | `nota.backlinks` | 0.1.0 | List incoming, outgoing and unresolved links for the current note |
 | CJK spacing | `nota.cjk-spacing` | 0.1.0 | Normalize configurable spaces between Chinese or Japanese text and Latin text |
 | Git | `nota.git` | 0.1.1 | Status, diffs, history and commits using system Git |
@@ -81,6 +81,11 @@ capabilities = [
 
 Without `network.http`, `nota.http` does not exist. Without `document.write`, the extension
 cannot modify the current document.
+
+Extension API versions use `vMAJOR.MINOR`, for example `v2.3`. Minor versions are backward
+compatible and may add APIs. Major versions may contain incompatible changes. A host accepts
+extensions from the same major version whose requested minor version is not newer than the
+host API.
 
 ## Updates and release metadata
 

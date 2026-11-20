@@ -41,7 +41,7 @@
 id          = "nota.stats"
 name        = "Writing Stats"
 version     = "0.7.0"
-api         = 2
+api         = "v2.3"
 
 description = "Track a writing session like a sports watch: start, pause, stop. Turn a session, a day or the long-term record into an international-style share card with author identity and an optional project QR code."
 license     = "BSD-2-Clause"

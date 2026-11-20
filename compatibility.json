@@ -1,10 +1,10 @@
 {
   "host": {
-    "api": 2,
+    "api": "v2.3",
     "minimum": "0.5.0-beta"
   },
   "plugins": {
-    "nota.ai": "0.1.2",
+    "nota.ai": "0.1.6",
     "nota.backlinks": "0.1.0",
     "nota.cjk-spacing": "0.1.0",
     "nota.git": "0.1.1",

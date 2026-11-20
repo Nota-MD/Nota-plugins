@@ -2,7 +2,7 @@
 id          = "nota.graph"
 name        = "Knowledge Graph"
 version     = "0.1.0"
-api         = 2
+api         = "v2.3"
 
 description = "Show notes and the links between them in an interactive graph."
 license     = "BSD-2-Clause"

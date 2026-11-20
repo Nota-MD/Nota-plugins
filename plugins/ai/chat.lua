@@ -53,6 +53,7 @@ local util = require("util")
 local store = require("store")
 local scope = require("scope")
 local request = require("request")
+local personas = require("personas")
 
 local M = {}
 
@@ -63,6 +64,7 @@ local T = function(s) return s end
 --- 把文案取词器接上宿主（由 `main.lua` 的 `on_load` 调）。
 function M.bind_text(f)
   T = f
+  personas.bind_text(f)
 end
 
 -- ── 上限 ──────────────────────────────────────────────────────────────────
@@ -137,31 +139,30 @@ end
 ---（用户自己改、或者刚应用了一处改动），而 `-` 行必须与**当前**文档逐字一致。
 --- 放在每轮重建的系统消息里，模型看到的永远是此刻的正文。
 local SYSTEM_PROMPT = [[
-你是 Nota（一个 Markdown 编辑器）里的写作助手。用户在同你对话，系统消息里带着当前文档的全文。
+You are Nota's writing assistant inside a Markdown editor.
 
-你的回答分两部分，按这个顺序写：
+CURRENT DOCUMENT is authoritative for this request and is rebuilt every turn.
+For questions about "the document" or "this file", use only CURRENT DOCUMENT.
+Earlier turns may mention another document. Treat those excerpts as stale and
+ignore them when they conflict with CURRENT DOCUMENT.
 
-第一部分是**普通文本**：直接回答用户。可以解释、可以建议、可以只是聊天、可以问回去。按 Markdown 写，用户在对话里直接读这一段。
-
-第二部分（**只有需要改文档的时候才写**）是**改动块**，放在整个回答的**最末尾**：
+Reply normally in Markdown. If the document must change, append one or more
+nota-diff fences at the very end:
 
 ```nota-diff
-- 原文里的一整行（逐字照抄，从行首到行尾，一个字都不能改）
-- 原文里紧接着的下一行
-+ 换上去的新内容
-+ 可以有好几行
+- Exact current line(s), copied verbatim and kept contiguous
++ Replacement line(s)
 ```
 
-改动块的规矩（错一条就应用不上）：
+Diff rules:
+1. A diff fence must be the final part of the reply.
+2. Every `-` line must match CURRENT DOCUMENT exactly.
+3. Use multiple fences in document order for multiple edits.
+4. Adding content without deleting lines uses only `+` lines.
+5. Do not emit a diff when no document change is needed.
 
-1. 它必须是回答的**最后一样东西**，后面不要再写任何字；
-2. `-` 行必须和**当前文档**逐字一致，而且必须是文档里**连续的一段**：不要改标点、不要补空格、不要省略、不要自己排版；
-3. `-` 行是"要被换掉的原话"，`+` 行是"换上去的新话"。不是让你把改过的整篇文档重抄一遍，只写动过的那一段；
-4. 只改一处就写一个改动块；改多处就写多个改动块，**按它们在文档里出现的先后顺序**写；
-5. 只是往文档里加新东西（不删任何一行）时，改动块里**只写 `+` 行**，它会追加到文末；
-6. **不需要改文档时就一个改动块都不要写**：不要写空的改动块，也不要写"占位"的改动块。
-
-⚠️ 你说要改什么，就必须在改动块里给出。用户是按改动块把改动**应用**进文档的，正文里那句"我把第二段改得更简洁了"不会进文档。
+Text outside a diff fence is only conversational. Only diff fences can be
+applied to the document.
 ]]
 
 --- 系统消息里**参考文件**那一段的引子。
@@ -170,8 +171,8 @@ local SYSTEM_PROMPT = [[
 --- 的东西，而上面那段是每一轮都在的规矩。混在一起的话，"这轮没挂文件"就得
 --- 把整段提示词拼两遍。
 local SCOPE_PROMPT = [[
-下面是用户另外指定给这次对话的**参考文件**（它们不在编辑区里，只是给他看的材料）。
-引用它们的时候说清楚是哪个文件。**不要**为这些文件里的内容写改动块——改动块只针对编辑区里的那一篇。
+The files below are optional reference material for this chat, not the CURRENT
+DOCUMENT. Name the file when citing it. Never write diff fences for these files.
 ]]
 -- ── 改动块：交给宿主 ─────────────────────────────────────────────────────
 --
@@ -386,9 +387,14 @@ local function build_messages(nota, chat)
   local doc = nota.document.get_text() or ""
   local sys
   if doc == "" then
-    sys = SYSTEM_PROMPT .. "\n\n（当前文档是空的。）"
+    sys = SYSTEM_PROMPT .. "\n\n──── CURRENT DOCUMENT BEGIN ────\n(empty)\n──── CURRENT DOCUMENT END ────"
   else
-    sys = SYSTEM_PROMPT .. "\n\n──── 当前文档全文开始 ────\n" .. doc .. "\n──── 当前文档全文结束 ────"
+    sys = SYSTEM_PROMPT .. "\n\n──── CURRENT DOCUMENT BEGIN ────\n" .. doc .. "\n──── CURRENT DOCUMENT END ────"
+  end
+
+  local persona = personas.active(nota)
+  if persona and util.trim(persona.prompt or "") ~= "" then
+    sys = sys .. "\n\n──── Active persona: " .. persona.label .. " ────\n" .. persona.prompt
   end
 
   -- 参考文件（第 61 项 (c)）：挂了才有这一段。
@@ -397,6 +403,7 @@ local function build_messages(nota, chat)
     sys = sys .. "\n\n" .. SCOPE_PROMPT .. "\n" .. refs
   end
 
+  -- This system message is mandatory and independent from user presets.
   local messages = { { role = "system", content = sys } }
 
   -- 只带最近 HISTORY_MAX 条：聊久了全带上，每一轮都在重发一个月前的记录。

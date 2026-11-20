@@ -1,81 +1,81 @@
 {
   "schema": 1,
   "repository": "Nota-plugins",
-  "release": "v0.9.0-beta",
-  "host_api": 2,
-  "generated_at": "2026-11-15T04:05:50Z",
+  "release": "v0.10.0-beta",
+  "host_api": "v2.3",
+  "generated_at": "2026-11-20T13:16:44Z",
   "plugins": [
     {
       "id": "nota.ai",
       "name": "AI assistant",
-      "version": "0.1.2",
-      "file": "nota.ai-0.1.2.nota-plugin",
-      "size": 60779,
-      "sha256": "87f8424757d8e7935b97610a03153f55fc76f933e64768495272331fc7d4480a",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.9.0-beta/nota.ai-0.1.2.nota-plugin"
+      "version": "0.1.6",
+      "file": "nota.ai-0.1.6.nota-plugin",
+      "size": 64863,
+      "sha256": "8765d6a285839e6913caee718eca993f5f7c1b896350d0ff0197a418de1fbf63",
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.10.0-beta/nota.ai-0.1.6.nota-plugin"
     },
     {
       "id": "nota.backlinks",
       "name": "Backlinks",
       "version": "0.1.0",
       "file": "nota.backlinks-0.1.0.nota-plugin",
-      "size": 5401,
-      "sha256": "54964dfb5ad145889c16a8c87e6535249dbff56dd608378d3bc6cf261d594006",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.9.0-beta/nota.backlinks-0.1.0.nota-plugin"
+      "size": 5405,
+      "sha256": "21eb7391c747959cc2264c6f7c2f4f04eeb18f6e705ceb17261e782b818b5cf8",
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.10.0-beta/nota.backlinks-0.1.0.nota-plugin"
     },
     {
       "id": "nota.cjk-spacing",
       "name": "CJK Spacing",
       "version": "0.1.0",
       "file": "nota.cjk-spacing-0.1.0.nota-plugin",
-      "size": 4813,
-      "sha256": "2be0eae7f96202c189ec04c89fb01fb5e73e0ac7353c8c0412d42e33fdc0a525",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.9.0-beta/nota.cjk-spacing-0.1.0.nota-plugin"
+      "size": 4818,
+      "sha256": "548b496d86aaaeb9c4c2a2728e8d22857f79fa35afca5be6594be0cb098422b5",
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.10.0-beta/nota.cjk-spacing-0.1.0.nota-plugin"
     },
     {
       "id": "nota.git",
       "name": "Git version control",
       "version": "0.1.1",
       "file": "nota.git-0.1.1.nota-plugin",
-      "size": 24259,
-      "sha256": "c3dc117bd622012a72bdc6531d52989f78a3214b795c2ef71a7e6a76ca659cc5",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.9.0-beta/nota.git-0.1.1.nota-plugin"
+      "size": 24277,
+      "sha256": "7133fcf757f1498ea71820a83db194cf5dc42b50da2dc511582a9f876f85eb70",
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.10.0-beta/nota.git-0.1.1.nota-plugin"
     },
     {
       "id": "nota.graph",
       "name": "Knowledge Graph",
       "version": "0.1.0",
       "file": "nota.graph-0.1.0.nota-plugin",
-      "size": 6408,
-      "sha256": "3112db84e8b16594513b653d60221d6aa52b274738cc60b884921ee1d8d570e3",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.9.0-beta/nota.graph-0.1.0.nota-plugin"
+      "size": 6412,
+      "sha256": "06d1248bc825953bdbda49648a545cdda9f9c9c0b9695711e9909f1761207878",
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.10.0-beta/nota.graph-0.1.0.nota-plugin"
     },
     {
       "id": "nota.slidev",
       "name": "Slidev Slides",
       "version": "0.1.2",
       "file": "nota.slidev-0.1.2.nota-plugin",
-      "size": 22282,
-      "sha256": "1bf2f6b5b7abce73dddbd9ffd932af2eedb325b0e460a431e0b738ffc6b11caf",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.9.0-beta/nota.slidev-0.1.2.nota-plugin"
+      "size": 22286,
+      "sha256": "26f1fa1e05859892f8d0a249ac4b2de45ebf2dd0a92789ba784184dff0d0e063",
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.10.0-beta/nota.slidev-0.1.2.nota-plugin"
     },
     {
       "id": "nota.stats",
       "name": "Writing Stats",
       "version": "0.7.0",
       "file": "nota.stats-0.7.0.nota-plugin",
-      "size": 1130211,
-      "sha256": "cdb53e765c2497f2c723200a322d4d9b112394b94efae01510320b880069c2e6",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.9.0-beta/nota.stats-0.7.0.nota-plugin"
+      "size": 1130215,
+      "sha256": "41a8b1a6328db5bc6a621162f920908fa09f45c43858e2d95a9370726d5b7659",
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.10.0-beta/nota.stats-0.7.0.nota-plugin"
     },
     {
       "id": "nota-md.vim",
       "name": "Vim key profiles",
       "version": "0.1.0",
       "file": "nota-md.vim-0.1.0.nota-plugin",
-      "size": 334497,
-      "sha256": "646a6e3a00fa4dc820dc559ea9e6e12ded39968707ddbba8c45442805afe697e",
-      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.9.0-beta/nota-md.vim-0.1.0.nota-plugin"
+      "size": 334501,
+      "sha256": "450c656bd504e4f50f89b34d990704720a11f93b12ecdd58239f0619e1acedc5",
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.10.0-beta/nota-md.vim-0.1.0.nota-plugin"
     }
   ]
 }

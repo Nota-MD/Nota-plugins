@@ -2,7 +2,7 @@
 id          = "nota.backlinks"
 name        = "Backlinks"
 version     = "0.1.0"
-api         = 2
+api         = "v2.3"
 
 description = "List the notes that link to the current note, the notes it links to, and unresolved links."
 license     = "BSD-2-Clause"

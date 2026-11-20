@@ -99,6 +99,7 @@ local chat = require("chat")
 local store = require("store")
 local scope = require("scope")
 local panel = require("panel")
+local personas = require("personas")
 
 -- ── 文案 ──────────────────────────────────────────────────────────────────
 -- `T("原句")` 取译文（**键就是原文**，表在 `lang/`）。⚠️ **原文是英语**
@@ -135,6 +136,7 @@ function M.on_load(nota)
   store.bind_text(T)
   scope.bind_text(T)
   panel.bind_text(T)
+  personas.bind_text(T)
 
   -- ⚠️ **第三件事**：把上次那几段对话读回来（第 57 项）。
   -- 顺序要紧：**必须在 `bind_text` 之后、`register_panel` 之前**——面板第一次
@@ -164,6 +166,43 @@ function M.on_load(nota)
     -- ⚠️ 一个开着的对话都没有是**合法状态**（用户可以把它们全关掉），
     -- 那时 `chat.current()` 给 `nil`——`chat.send` 自己会说一句。
     return chat.send(nota, chat.current(), util.trim(text))
+  end)
+
+  nota.command.register("select_persona", function(args)
+    local id = type(args) == "table" and args.persona or ""
+    local ok, err = personas.set_active(nota, id)
+    if not ok then error(err or T("Unknown persona")) end
+    nota.ui.refresh("ai")
+  end)
+
+  nota.command.register("import_persona", function(args)
+    local file = type(args) == "table" and args.file or nil
+    local result, err = personas.import(nota, file)
+    if not result then error(err or T("Could not import persona")) end
+    nota.ui.notify(T("Imported %d persona preset(s).", result.count), "success")
+    nota.ui.refresh("ai")
+  end)
+
+  nota.command.register("delete_persona", function()
+    local active = personas.active_id(nota)
+    if active == "" then return end
+    local ok, err = personas.remove(nota, active)
+    if not ok then error(err or T("Could not delete persona")) end
+    nota.ui.refresh("ai")
+  end)
+
+  nota.command.register("save_persona_label", function(args)
+    local label = type(args) == "table" and args.label or ""
+    local ok, err = personas.update_label(nota, label)
+    if not ok then error(err or T("Could not save persona")) end
+    nota.ui.refresh("ai")
+  end)
+
+  nota.command.register("save_persona_prompt", function(args)
+    local text = type(args) == "table" and args.text or ""
+    local ok, err = personas.update_prompt(nota, text)
+    if not ok then error(err or T("Could not save persona")) end
+    nota.ui.refresh("ai")
   end)
 
   --- 开一个新对话，并切过去。

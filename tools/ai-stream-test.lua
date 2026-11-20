@@ -155,6 +155,7 @@ local SETTINGS = { api_key = "stub", base_url = "http://127.0.0.1:1/v1", model =
 local PUSHED = {} -- 插件喊过的每一次 `nota.ui.stream`（`""` = 收工那一声）
 local POSTED = 0 -- 走整段那条路的次数
 local SCENARIO = "stream"
+local LAST_SPEC = nil
 
 --- 把一段 SSE 正文按**任意字符位置**切成若干块，模拟宿主的分块读。
 ---
@@ -235,6 +236,8 @@ local nota = {
       return { ok = true, code = 200, text = WHOLE_TEXT, json = json_decode(WHOLE_TEXT), chunks = 1 }
     end,
     stream = function(spec, cb)
+      LAST_SPEC = spec
+      assert(spec.method == "POST", "流式请求必须显式使用 POST")
       assert(spec.body.stream == true, "流式那条路必须带上 stream = true")
       if SCENARIO == "wholereply" then
         -- 对方不认流式：回一份整段 JSON（**一行 `data:` 都没有**）。
@@ -273,6 +276,18 @@ local nota = {
         for _, chunk in ipairs(chop(body, 9)) do cb(chunk) end
         return { ok = true, code = 200, text = "", chunks = #chop(body, 9) }
       end
+      if SCENARIO == "reasoning" or SCENARIO == "reasoningonly" then
+        local body = table.concat({
+          'data: {"choices":[{"delta":{"reasoning_content":"Think"}}]}\n\n',
+          'data: {"choices":[{"delta":{"reasoning_content":"ing"}}]}\n\n',
+          SCENARIO == "reasoning"
+              and 'data: {"choices":[{"delta":{"content":"OK"}}]}\n\n'
+            or "",
+          "data: [DONE]\n\n",
+        })
+        for _, chunk in ipairs(chop(body, 6)) do cb(chunk) end
+        return { ok = true, code = 200, text = "", chunks = #chop(body, 6) }
+      end
       if SCENARIO == "cut" then
         -- 答到一半连接被对方关掉。
         for _, c in ipairs(chop(sse_frames({ "写到一半" }), 7)) do
@@ -304,7 +319,7 @@ end
 
 local function reset(scenario)
   SCENARIO = scenario
-  PUSHED, POSTED = {}, 0
+  PUSHED, POSTED, LAST_SPEC = {}, 0, nil
 end
 
 -- ── (1) 流式：一帧横跨好几块，正文要与整段那条路一致 ──────────────────────
@@ -323,6 +338,49 @@ do
   eq(PUSHED[#PUSHED], "", "最后一次是空串（收工）")
   eq(pushes_grow({ table.unpack(PUSHED, 1, #PUSHED - 1) }), true, "推出去的正文一次比一次长")
   eq(PUSHED[#PUSHED - 1], r.text, "收工之前那一次推的就是全文")
+  eq(LAST_SPEC.body.messages[1].role, "system", "system message is always first")
+  eq(
+    string.find(LAST_SPEC.body.messages[1].content, "CURRENT DOCUMENT", 1, true) ~= nil,
+    true,
+    "current document contract is missing"
+  )
+  eq(
+    string.find(LAST_SPEC.body.messages[1].content, "Earlier turns may mention another document", 1, true) ~= nil,
+    true,
+    "stale-document guard is missing"
+  )
+  eq(LAST_SPEC.body.messages[2].role, "user", "user prompt stays separate from system prompt")
+end
+
+print("(1b) reasoning-first providers show progress, then the final answer")
+reset("reasoning")
+do
+  local r = send_once()
+  eq(r.ok, true, "ok")
+  eq(r.text, "OK", "text")
+  eq(string.sub(PUSHED[1], 1, #"Thinking…"), "Thinking…", "reasoning did not expose a progress state")
+  eq(string.find(PUSHED[1], "Think", 1, true) ~= nil, true, "first reasoning fragment was not streamed")
+  eq(
+    string.find(PUSHED[2], "Thinking", 1, true) ~= nil,
+    true,
+    "reasoning did not grow before the final answer"
+  )
+  eq(PUSHED[#PUSHED - 1], "OK", "final content did not replace the progress state")
+  eq(PUSHED[#PUSHED], "", "completion marker clears the preview")
+end
+
+print("(1c) reasoning-only completion does not repeat the request")
+reset("reasoningonly")
+do
+  local r = send_once()
+  eq(r.ok, false, "reasoning-only stream should not report a final answer")
+  eq(POSTED, 0, "reasoning-only stream repeated a paid request")
+  eq(string.sub(PUSHED[1], 1, #"Thinking…"), "Thinking…", "reasoning progress was not shown")
+  eq(
+    string.find(PUSHED[#PUSHED - 1], "Thinking", 1, true) ~= nil,
+    true,
+    "reasoning-only stream did not grow incrementally"
+  )
 end
 
 -- ── (2) 对方不认流式 ⇒ 自动退回整段 ──────────────────────────────────────
