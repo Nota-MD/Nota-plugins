@@ -380,7 +380,6 @@ local function stream_request(nota, messages, on_delta)
   local saw_sse = false
   local saw_reasoning = false
   local thinking_sent = false
-  local reasoning_acc = ""
   local done = false
   local stream_error = nil
   local last_sent = ""
@@ -419,16 +418,10 @@ local function stream_request(nota, messages, on_delta)
     local reasoning = reasoning_of(nota, payload)
     if reasoning and reasoning ~= "" then
       saw_reasoning = true
-      if string.sub(reasoning, 1, #reasoning_acc) == reasoning_acc then
-        reasoning_acc = reasoning
-      else
-        reasoning_acc = reasoning_acc .. reasoning
-      end
-      local now = util.now_ms(nota)
-      if not thinking_sent or now - last_push >= STREAM_PUSH_MS then
+      if not thinking_sent then
         thinking_sent = true
-        last_push = now
-        last_sent = T("Thinking…") .. "\n\n" .. reasoning_acc
+        last_push = util.now_ms(nota)
+        last_sent = T("Thinking…")
         on_delta(last_sent)
       end
     end

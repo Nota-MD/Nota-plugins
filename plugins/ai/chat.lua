@@ -53,7 +53,7 @@ local util = require("util")
 local store = require("store")
 local scope = require("scope")
 local request = require("request")
-local personas = require("personas")
+local prompt = require("prompt")
 
 local M = {}
 
@@ -64,7 +64,6 @@ local T = function(s) return s end
 --- 把文案取词器接上宿主（由 `main.lua` 的 `on_load` 调）。
 function M.bind_text(f)
   T = f
-  personas.bind_text(f)
 end
 
 -- ── 上限 ──────────────────────────────────────────────────────────────────
@@ -126,54 +125,6 @@ function M.preset(id)
   return PRESETS[id]
 end
 
--- ── 送给模型的系统提示词 ──────────────────────────────────────────────────
---
--- ⚠️ 下面这段和 `lua/api/diff.rs` 里那两个围栏常量、`docs/13` 那张表是
--- **同一份契约的三处**。改一处就得改三处——漏一处的症状是"模型照旧格式写、
--- 插件认不出来了"，而两边都不报错。
---
---（从前这里还有 `FENCE_OPEN` / `FENCE_CLOSE` 两个常量，解析也在这个文件里。
--- 2026-09-24 解析与应用搬去了宿主，常量跟着走，别在这儿再写一份。）**每轮都重发**（里面带着当前文档的全文）。
----
---- ⚠️ 为什么文档放在**系统消息**里、而不是第一轮的用户消息里：文档是会被改的
----（用户自己改、或者刚应用了一处改动），而 `-` 行必须与**当前**文档逐字一致。
---- 放在每轮重建的系统消息里，模型看到的永远是此刻的正文。
-local SYSTEM_PROMPT = [[
-You are Nota's writing assistant inside a Markdown editor.
-
-CURRENT DOCUMENT is authoritative for this request and is rebuilt every turn.
-For questions about "the document" or "this file", use only CURRENT DOCUMENT.
-Earlier turns may mention another document. Treat those excerpts as stale and
-ignore them when they conflict with CURRENT DOCUMENT.
-
-Reply normally in Markdown. If the document must change, append one or more
-nota-diff fences at the very end:
-
-```nota-diff
-- Exact current line(s), copied verbatim and kept contiguous
-+ Replacement line(s)
-```
-
-Diff rules:
-1. A diff fence must be the final part of the reply.
-2. Every `-` line must match CURRENT DOCUMENT exactly.
-3. Use multiple fences in document order for multiple edits.
-4. Adding content without deleting lines uses only `+` lines.
-5. Do not emit a diff when no document change is needed.
-
-Text outside a diff fence is only conversational. Only diff fences can be
-applied to the document.
-]]
-
---- 系统消息里**参考文件**那一段的引子。
----
---- ⚠️ 单独一段（不并进 `SYSTEM_PROMPT`）：参考文件是**这一轮有、下一轮可能没有**
---- 的东西，而上面那段是每一轮都在的规矩。混在一起的话，"这轮没挂文件"就得
---- 把整段提示词拼两遍。
-local SCOPE_PROMPT = [[
-The files below are optional reference material for this chat, not the CURRENT
-DOCUMENT. Name the file when citing it. Never write diff fences for these files.
-]]
 -- ── 改动块：交给宿主 ─────────────────────────────────────────────────────
 --
 -- 「末尾附一段 diff」这件事的**解析与应用都在宿主的 `nota.diff` 里**
@@ -187,7 +138,7 @@ DOCUMENT. Name the file when citing it. Never write diff fences for these files.
 --    ——插件管对话，宿主管格式——不是为凑行数。
 --
 -- ⚠️ 契约（改一处要改三处）：围栏与那几条规矩写在 `lua/api/diff.rs`
--- ＋ 下面那段 `SYSTEM_PROMPT`（送给模型的）＋ `docs/13-lua-api.md` §AI 改动块。
+-- ＋ `prompt.lua` 里的 system prompt and `docs/13-lua-api.md` section 11.
 
 --- 拆一段回答：返回 `{ text = 正文, hunks = {...}, bad = 坏行数 }`。
 --- 一个改动块都没有时 `hunks` 是空表（**不是 `nil`**：调用方不用分情况）。
@@ -378,30 +329,17 @@ end
 
 --- 组装这一轮发给模型的完整消息表，外加一串"参考资料发生了什么"的话。
 ---
---- ⚠️ 文档进的是**系统消息**，而且每轮重建（理由见 `SYSTEM_PROMPT` 那段）。
+--- The current document enters the system message and is rebuilt every turn.
 --- `error` / `note` 那两种角色**不发给模型**：它们是给用户看的旁白。
 ---
 --- 返回两个值：`messages`、`notes`（读不到 / 被截短 / 预算用完的文件，
 --- 由 `M.send` 落成一条旁白给用户看）。
 local function build_messages(nota, chat)
-  local doc = nota.document.get_text() or ""
-  local sys
-  if doc == "" then
-    sys = SYSTEM_PROMPT .. "\n\n──── CURRENT DOCUMENT BEGIN ────\n(empty)\n──── CURRENT DOCUMENT END ────"
-  else
-    sys = SYSTEM_PROMPT .. "\n\n──── CURRENT DOCUMENT BEGIN ────\n" .. doc .. "\n──── CURRENT DOCUMENT END ────"
-  end
-
-  local persona = personas.active(nota)
-  if persona and util.trim(persona.prompt or "") ~= "" then
-    sys = sys .. "\n\n──── Active persona: " .. persona.label .. " ────\n" .. persona.prompt
-  end
+  local sys = prompt.system(nota)
 
   -- 参考文件（第 61 项 (c)）：挂了才有这一段。
   local refs, _, notes = scope.render(nota, chat)
-  if refs ~= "" then
-    sys = sys .. "\n\n" .. SCOPE_PROMPT .. "\n" .. refs
-  end
+  sys = prompt.add_references(sys, refs)
 
   -- This system message is mandatory and independent from user presets.
   local messages = { { role = "system", content = sys } }
@@ -411,7 +349,10 @@ local function build_messages(nota, chat)
   for i = start_i, #chat.msgs do
     local m = chat.msgs[i]
     if m.role == "user" or m.role == "assistant" then
-      messages[#messages + 1] = { role = m.role, content = m.text }
+      messages[#messages + 1] = {
+        role = m.role,
+        content = prompt.history(m.context) .. m.text,
+      }
     end
   end
 
@@ -431,8 +372,9 @@ function M.send(nota, chat, text, again)
   end
 
   local fresh = chat_is_fresh(chat)
+  local turn_context = prompt.document(nota)
   if not again then
-    chat.msgs[#chat.msgs + 1] = { role = "user", text = text }
+    chat.msgs[#chat.msgs + 1] = { role = "user", text = text, context = turn_context }
     if fresh then
       chat.title = title_from(text)
     end
@@ -463,10 +405,9 @@ function M.send(nota, chat, text, again)
     nota.ui.stream(text)
   end)
 
-  if pushed then
-    -- ⚠️ **不管成功失败都要喊这一声**：那段字只是临时显示，不撤的话屏幕上
-    -- 会一直停在那半截上——成功了像是"永远写不完"，失败了像是"它还在写"。
-    -- （前端在拉回真内容时也会顺手清一遍，那是**兜底**，不是这里的替代。）
+  if pushed and not r.ok then
+    -- On success, keep the live preview until refreshed panel content replaces
+    -- it. Clearing first creates a visible blank frame.
     nota.ui.stream("")
   end
 
@@ -475,7 +416,11 @@ function M.send(nota, chat, text, again)
     -- 不留的话，用户刚亲眼看着字一个个冒出来、然后它们整段消失了——那比
     -- 一开始就报错更让人以为是自己弄坏了什么。
     if type(r.partial) == "string" and r.partial ~= "" then
-      chat.msgs[#chat.msgs + 1] = { role = "assistant", text = r.partial }
+      chat.msgs[#chat.msgs + 1] = {
+        role = "assistant",
+        text = r.partial,
+        context = prompt.document(nota),
+      }
     end
     -- ⚠️ 失败也**留在对话里**（用一种单独的角色）：用户看得见自己说了什么、
     -- 失败在哪一步，而不是"面板闪了一下，我说的话也没了"。
@@ -485,7 +430,11 @@ function M.send(nota, chat, text, again)
     return { ok = false, error = r.error }
   end
 
-  chat.msgs[#chat.msgs + 1] = { role = "assistant", text = r.text }
+  chat.msgs[#chat.msgs + 1] = {
+    role = "assistant",
+    text = r.text,
+    context = prompt.document(nota),
+  }
 
   local p = M.parse(nota, r.text)
   if #p.hunks > 0 then

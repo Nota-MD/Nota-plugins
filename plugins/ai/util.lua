@@ -59,6 +59,9 @@ M.KEY_SCOPE = "scope_chars"
 --- 见 settings.rs）。判断一律走 `util.stream_on(nota)`，别自己去比字符串。
 M.KEY_STREAM = "stream"
 
+M.KEY_PERSONA_LABEL = "persona_label"
+M.KEY_PERSONA_PROMPT = "persona_prompt"
+
 M.DEFAULT_BASE = "https://api.openai.com/v1"
 M.DEFAULT_MODEL = "gpt-4o-mini"
 

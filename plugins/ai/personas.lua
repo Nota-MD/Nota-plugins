@@ -137,6 +137,15 @@ function M.active_id(nota)
 end
 
 function M.active(nota)
+  local label = util.read_setting(nota, util.KEY_PERSONA_LABEL, "")
+  local prompt = util.read_setting(nota, util.KEY_PERSONA_PROMPT, "")
+  if util.trim(prompt) ~= "" then
+    return {
+      id = "settings",
+      label = util.trim(label) ~= "" and util.trim(label) or T("My preset"),
+      prompt = util.trim(prompt),
+    }
+  end
   local wanted = M.active_id(nota)
   if wanted == "" then return nil end
   for _, item in ipairs(M.load(nota)) do

@@ -131,5 +131,21 @@ test("first save creates and activates a preset", function()
   equal(personalities.load(nota)[1].id, active.id, "created persona persisted")
 end)
 
+print("(7) Settings-page preset overrides imported persona selection")
+test("label and multiline prompt are read from extension settings", function()
+  settings = {
+    persona_label = "Settings preset",
+    persona_prompt = "  Use restrained terminology.  ",
+  }
+  local active = personalities.active(nota)
+  equal(active.id, "settings", "settings source")
+  equal(active.label, "Settings preset", "settings label")
+  equal(active.prompt, "Use restrained terminology.", "settings prompt")
+
+  settings.persona_prompt = "   "
+  settings.persona_active = personalities.load(nota)[1].id
+  assert_value(personalities.active(nota), "empty settings prompt should fall back")
+end)
+
 print(string.format("\nALL PASS (%d assertions)", passed))
 if failed > 0 then os.exit(1) end

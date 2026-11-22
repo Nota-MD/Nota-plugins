@@ -16,8 +16,8 @@
 [plugin]
 id          = "nota.ai"
 name        = "AI assistant"
-version     = "0.1.6"
-api         = "v2.3"
+version     = "0.1.7"
+api         = "v2.4"
 
 description = "Writing assistant: polish, continue, summarize, translate. Bring your own API key."
 license     = "BSD-2-Clause"
@@ -35,6 +35,7 @@ capabilities = [
   "document.read",   # 把正文送给模型当上下文
   "document.write",  # 用户确认后把结果写回文档
   "network.http",    # 请求 {base_url}/chat/completions；只发给用户填的那个地址
+  "ai.context.read", # 读取其他拓展追加的 Markdown 格式说明；不能读取系统提示词
   "settings.own",    # 存 api_key / base_url / model / 可读范围的上限（只这一个插件自己的文件）
   "data.own",        # 2026-10-04 起：对话落盘（`~/.local/share/nota/plugin-data/nota.ai/chats.txt`）
   "fs.read",         # 2026-10-04 起：「AI 可读的文件」那一栏要能列/读工作区里的 .md
@@ -105,3 +106,20 @@ kind       = "toggle"
 label      = "Stream output"
 help       = "Show text as the model generates it. Nota falls back to a normal response when an endpoint ignores or rejects streaming."
 default_on = true
+
+[[settings]]
+key          = "persona_label"
+kind         = "text"
+label        = "Preset name"
+help         = "A short name for the custom writing preset."
+placeholder  = "My preset"
+default_text = ""
+
+[[settings]]
+key          = "persona_prompt"
+kind         = "text"
+label        = "Custom preset instructions"
+help         = "Optional system instructions for role, audience, tone and terminology. Leave empty to use the built-in assistant."
+placeholder  = "Write custom instructions…"
+default_text = ""
+multiline    = true
