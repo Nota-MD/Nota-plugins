@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "repository": "Nota-plugins",
-  "release": "v0.10.0-beta",
-  "host_api": "v2.3",
-  "generated_at": "2026-11-20T13:16:44Z",
+  "release": "v0.11.0-beta",
+  "host_api": "v2.4",
+  "generated_at": "2026-11-22T09:23:17Z",
   "plugins": [
     {
       "id": "nota.ai",
@@ -58,6 +58,15 @@
       "size": 22286,
       "sha256": "26f1fa1e05859892f8d0a249ac4b2de45ebf2dd0a92789ba784184dff0d0e063",
       "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.10.0-beta/nota.slidev-0.1.2.nota-plugin"
+    },
+    {
+      "id": "nota.sheet-formulas",
+      "name": "Spreadsheet Formulas",
+      "version": "0.1.0",
+      "file": "nota.sheet-formulas-0.1.0.nota-plugin",
+      "size": 8696,
+      "sha256": "2a9a69391e0f3e5023e2e1a2f777d6c305339aef0985d55a928b5d5c2f4f2dcb",
+      "url": "https://github.com/Nota-MD/Nota-plugins/releases/download/v0.11.0-beta/nota.sheet-formulas-0.1.0.nota-plugin"
     },
     {
       "id": "nota.stats",
