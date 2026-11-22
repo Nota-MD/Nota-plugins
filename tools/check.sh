@@ -5,8 +5,8 @@
 # 三件事：
 #   ① 行数：任何 .lua / .py / .toml 不得 >= 1000 行，> 800 报 WARN
 #      （尺子与主仓库 `docs/09` §4 同一把：目标 300–800）
-#   ② 七份无头测试：写作统计、AI 流式、Git 面板、图谱、反向链接、
-#      中英文间距、Vim 配置档
+#   ② 无头测试：写作统计、AI 流式、Git 面板、图谱、反向链接、
+#      中英文间距、电子表格公式、Vim 配置档
 #   ③ 没声明就赋值（= 想写全局）的名字：所有插件一份一份过
 #      （2026-10-09 加的——那张 `global 'picked'` 的截图就是这一族）
 #
@@ -52,10 +52,10 @@ while IFS= read -r f; do
 done < <(find plugins tools -type f \( -name '*.lua' -o -name '*.py' -o -name '*.toml' \) | sort)
 [ "$OVER" -eq 0 ] && ok "没有超限的文件"
 
-head_ "② 八份无头测试"
+head_ "② 九份无头测试"
 # ⚠️ 三份都**必须在仓库根跑**（它们按脚本自己的位置算路径）。
 if [ -n "$LUA" ] || command -v podman >/dev/null 2>&1; then
-  for t in stats-state-test ai-stream-test personas-test git-panel-test graph-test backlinks-test cjk-spacing-test; do
+  for t in stats-state-test ai-stream-test personas-test git-panel-test graph-test backlinks-test cjk-spacing-test sheet-formulas-test; do
     if out=$(run_lua "tools/$t.lua" 2>&1); then
       # ⚠️ 三份的收尾行**不是同一句**（`ALL PASS（N 条断言）` / `全部通过`）
       ok "$t：$(printf '%s' "$out" | grep -E 'ALL PASS|全部通过' | tail -1)"

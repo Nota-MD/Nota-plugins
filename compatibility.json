@@ -1,6 +1,6 @@
 {
   "host": {
-    "api": "v2.3",
+    "api": "v2.4",
     "minimum": "0.5.0-beta"
   },
   "plugins": {
@@ -10,6 +10,7 @@
     "nota.git": "0.1.1",
     "nota.graph": "0.1.0",
     "nota.slidev": "0.1.2",
+    "nota.sheet-formulas": "0.1.0",
     "nota.stats": "0.7.0",
     "nota-md.vim": "0.1.0"
   }

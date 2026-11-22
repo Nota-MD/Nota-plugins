@@ -1,0 +1,26 @@
+[plugin]
+id = "nota.sheet-formulas"
+name = "Spreadsheet Formulas"
+version = "0.1.0"
+api = "v2.4"
+description = "Evaluate Excel-compatible formulas in ordinary GFM Markdown tables without changing the saved Markdown unless Keep Values is chosen."
+license = "BSD-2-Clause"
+authors = ["Leo Lee"]
+entry = "main.lua"
+langs = ["en", "zh-CN"]
+
+capabilities = [
+  "table.read",
+  "table.render",
+  "table.write",
+  "table.context_action",
+  "spreadsheet.require",
+  "ui.notify",
+]
+
+[update]
+manifest = "https://github.com/Nota-MD/Nota-plugins/releases/latest/download/latest.json"
+
+[[setting_lock]]
+setting = "editor.spreadsheet_tables"
+value = true
