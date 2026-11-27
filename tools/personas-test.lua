@@ -1,6 +1,7 @@
 package.path = "plugins/ai/?.lua;" .. package.path
 
 local personalities = require("personas")
+local prompt = require("prompt")
 personalities.bind_text(function(s, ...)
   if select("#", ...) == 0 then return s end
   return string.format(s, ...)
@@ -145,6 +146,81 @@ test("label and multiline prompt are read from extension settings", function()
   settings.persona_prompt = "   "
   settings.persona_active = personalities.load(nota)[1].id
   assert_value(personalities.active(nota), "empty settings prompt should fall back")
+end)
+
+print("(8) Runtime model identity comes only from the configured model")
+test("the mandatory system prompt carries the runtime model id", function()
+  local prompt_nota = {
+    settings = {
+      get = function(key)
+        if key == "model" then return "deepseek-flash" end
+        return nil
+      end,
+    },
+    document = {
+      get_text = function() return "Document body" end,
+      get_title = function() return "Document" end,
+      get_path = function() return "/tmp/document.md" end,
+      get_revision = function() return 1 end,
+    },
+  }
+  local system = prompt.system(prompt_nota)
+  assert_value(
+    string.find(system, "runtime model id: deepseek-flash", 1, true),
+    "runtime model id is missing"
+  )
+  assert_value(
+    string.find(system, "Never infer or disclose a provider or model name", 1, true),
+    "provider identity guard is missing"
+  )
+  equal(string.find(system, "Claude", 1, true), nil, "hardcoded Claude identity")
+  equal(string.find(system, "Anthropic", 1, true), nil, "hardcoded Anthropic identity")
+end)
+
+print("(9) Settings can select and edit imported personas")
+test("selection loads the prompt and switching preserves edits", function()
+  files = {}
+  settings = {}
+  nota.json.decode = function()
+    return {
+      personas = {
+        { id = "editor", name = "Editor", system = "Edit carefully." },
+        { id = "tutor", name = "Tutor", prompt = "Teach clearly." },
+      },
+    }
+  end
+  assert_value(personalities.import(nota, { text = '{"personas":[]}' }), "import failed")
+  local options = personalities.options(nota)
+  equal(#options, 4, "built-in, custom and two imported options")
+  equal(options[1].value, "", "built-in value")
+  equal(options[2].value, "__custom__", "custom value")
+  equal(options[3].label, "Editor", "first imported label")
+  equal(options[3].editable, true, "imported persona editable")
+  equal(options[3].deletable, true, "imported persona deletable")
+
+  assert_value(personalities.select_from_settings(nota, "editor"), "select editor failed")
+  equal(settings.persona_prompt, "Edit carefully.", "editor prompt loaded")
+  settings.persona_prompt = "Edit with restraint."
+  settings.persona_active = "tutor"
+  assert_value(personalities.select_from_settings(nota, "tutor"), "select tutor failed")
+  equal(settings.persona_prompt, "Teach clearly.", "tutor prompt loaded")
+  assert_value(personalities.select_from_settings(nota, "editor"), "reselect editor failed")
+  equal(settings.persona_prompt, "Edit with restraint.", "editor edit persisted")
+  equal(personalities.active(nota).prompt, "Edit with restraint.", "active edited prompt")
+
+  assert_value(personalities.select_from_settings(nota, "__custom__"), "select custom failed")
+  settings.persona_prompt = "Use a neutral custom voice."
+  assert_value(personalities.select_from_settings(nota, "tutor"), "switch away from custom failed")
+  assert_value(personalities.select_from_settings(nota, "__custom__"), "reselect custom failed")
+  equal(settings.persona_prompt, "Use a neutral custom voice.", "custom prompt persisted")
+
+  local created = personalities.create_named(nota, "Reviewer")
+  assert_value(created, "new persona failed")
+  equal(settings.persona_active, created.id, "new persona selected")
+  assert_value(personalities.rename(nota, created.id, "Strict reviewer"), "rename failed")
+  equal(personalities.active(nota).label, "Strict reviewer", "renamed persona label")
+  assert_value(personalities.remove(nota, created.id), "delete failed")
+  equal(personalities.active_id(nota), "", "deleted persona no longer selected")
 end)
 
 print(string.format("\nALL PASS (%d assertions)", passed))

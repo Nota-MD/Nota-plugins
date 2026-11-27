@@ -14,6 +14,9 @@ end
 local FILE = "personas.txt"
 local VERSION = "nota-ai-personas/1"
 local ACTIVE = "persona_active"
+local EDITING = "persona_editing"
+local CUSTOM = "__custom__"
+local CUSTOM_PROMPT = "persona_custom_prompt"
 local MAX_PERSONAS = 64
 local MAX_PROMPT = 50000
 
@@ -138,18 +141,33 @@ end
 
 function M.active(nota)
   local label = util.read_setting(nota, util.KEY_PERSONA_LABEL, "")
-  local prompt = util.read_setting(nota, util.KEY_PERSONA_PROMPT, "")
+  local prompt = util.trim(util.read_setting(nota, util.KEY_PERSONA_PROMPT, ""))
+  local wanted = M.active_id(nota)
+  if wanted == CUSTOM then
+    return {
+      id = CUSTOM,
+      label = T("Custom persona"),
+      prompt = prompt,
+    }
+  end
+  if wanted ~= "" then
+    for _, item in ipairs(M.load(nota)) do
+      if item.id == wanted then
+        local editing = util.read_setting(nota, EDITING, "")
+        return {
+          id = item.id,
+          label = item.label,
+          prompt = editing == item.id and prompt or item.prompt,
+        }
+      end
+    end
+  end
   if util.trim(prompt) ~= "" then
     return {
       id = "settings",
       label = util.trim(label) ~= "" and util.trim(label) or T("My preset"),
-      prompt = util.trim(prompt),
+      prompt = prompt,
     }
-  end
-  local wanted = M.active_id(nota)
-  if wanted == "" then return nil end
-  for _, item in ipairs(M.load(nota)) do
-    if item.id == wanted then return item end
   end
   return nil
 end
@@ -162,15 +180,78 @@ end
 
 function M.set_active(nota, id)
   local wanted = tostring(id or "")
-  if wanted ~= "" then
-    local found = false
-    for _, item in ipairs(M.load(nota)) do
-      found = found or item.id == wanted
-    end
-    if not found then return nil, T("Unknown persona: %s", wanted) end
+  local items = M.load(nota)
+  local prompt = util.read_setting(nota, util.KEY_PERSONA_PROMPT, "")
+  if wanted == "" then
+    nota.settings.set(ACTIVE, "")
+    nota.settings.set(EDITING, "")
+    nota.settings.set(util.KEY_PERSONA_LABEL, "")
+    nota.settings.set(util.KEY_PERSONA_PROMPT, "")
+    return true
   end
-  nota.settings.set(ACTIVE, wanted)
-  return true
+  if wanted == CUSTOM then
+    local saved = util.trim(util.read_setting(nota, CUSTOM_PROMPT, ""))
+    if saved == "" then saved = util.trim(prompt) end
+    nota.settings.set(ACTIVE, CUSTOM)
+    nota.settings.set(EDITING, CUSTOM)
+    nota.settings.set(util.KEY_PERSONA_LABEL, T("Custom persona"))
+    nota.settings.set(util.KEY_PERSONA_PROMPT, saved)
+    return true
+  end
+  for _, item in ipairs(items) do
+    if item.id == wanted then
+      nota.settings.set(ACTIVE, item.id)
+      nota.settings.set(EDITING, item.id)
+      nota.settings.set(util.KEY_PERSONA_LABEL, item.label)
+      nota.settings.set(util.KEY_PERSONA_PROMPT, item.prompt)
+      return true
+    end
+  end
+  return nil, T("Unknown persona: %s", wanted)
+end
+
+function M.options(nota)
+  local options = {
+    { value = "", label = T("Built-in assistant"), editable = false, deletable = false },
+    { value = CUSTOM, label = T("Custom persona"), editable = false, deletable = false },
+  }
+  for _, item in ipairs(M.load(nota)) do
+    options[#options + 1] = {
+      value = item.id,
+      label = item.label,
+      editable = true,
+      deletable = true,
+    }
+  end
+  return options
+end
+
+function M.select_from_settings(nota, value)
+  local editing = util.read_setting(nota, EDITING, "")
+  if editing == CUSTOM then
+    nota.settings.set(CUSTOM_PROMPT, util.read_setting(nota, util.KEY_PERSONA_PROMPT, ""))
+  elseif editing ~= "" then
+    local prompt = util.read_setting(nota, util.KEY_PERSONA_PROMPT, "")
+    local items = M.load(nota)
+    for _, item in ipairs(items) do
+      if item.id == editing then
+        item.prompt = util.cut(prompt, MAX_PROMPT)
+        local ok, err = save(nota, items)
+        if not ok then return nil, err end
+        break
+      end
+    end
+  end
+  return M.set_active(nota, value)
+end
+
+function M.migrate(nota)
+  local prompt = util.read_setting(nota, util.KEY_PERSONA_PROMPT, "")
+  if M.active_id(nota) == "" and util.read_setting(nota, EDITING, "") == "" and util.trim(prompt) ~= "" then
+    nota.settings.set(ACTIVE, CUSTOM)
+    nota.settings.set(EDITING, CUSTOM)
+    nota.settings.set(CUSTOM_PROMPT, prompt)
+  end
 end
 
 function M.import(nota, file)
@@ -190,7 +271,8 @@ function M.import(nota, file)
   end
   local ok, err = save(nota, items)
   if not ok then return nil, err end
-  nota.settings.set(ACTIVE, incoming[1].id)
+  local selected, select_error = M.select_from_settings(nota, incoming[1].id)
+  if not selected then return nil, select_error end
   return { ok = true, count = #incoming, active = incoming[1].id }
 end
 
@@ -202,7 +284,12 @@ function M.remove(nota, id)
   end
   local ok, err = save(nota, kept)
   if not ok then return nil, err end
-  if M.active_id(nota) == wanted then nota.settings.set(ACTIVE, "") end
+  if M.active_id(nota) == wanted then
+    nota.settings.set(ACTIVE, "")
+    nota.settings.set(EDITING, "")
+    nota.settings.set(util.KEY_PERSONA_LABEL, "")
+    nota.settings.set(util.KEY_PERSONA_PROMPT, "")
+  end
   return true
 end
 
@@ -229,7 +316,41 @@ local function create(nota, items, label, prompt)
   local saved, save_error = save(nota, items)
   if not saved then return nil, save_error end
   nota.settings.set(ACTIVE, item.id)
+  nota.settings.set(EDITING, item.id)
+  nota.settings.set(util.KEY_PERSONA_LABEL, item.label)
+  nota.settings.set(util.KEY_PERSONA_PROMPT, item.prompt)
   return item
+end
+
+function M.create_named(nota, label)
+  local value = util.trim(label or "")
+  if value == "" then return nil, T("Persona name cannot be empty") end
+  local items = M.load(nota)
+  if #items >= MAX_PERSONAS then
+    return nil, T("The persona limit has been reached")
+  end
+  local item, err = create(nota, items, value, "")
+  if not item then return nil, err end
+  return { ok = true, id = item.id }
+end
+
+function M.rename(nota, id, label)
+  local wanted = tostring(id or "")
+  local value = util.trim(label or "")
+  if value == "" then return nil, T("Persona name cannot be empty") end
+  local items = M.load(nota)
+  for _, item in ipairs(items) do
+    if item.id == wanted then
+      item.label = value
+      local ok, err = save(nota, items)
+      if not ok then return nil, err end
+      if M.active_id(nota) == wanted then
+        nota.settings.set(util.KEY_PERSONA_LABEL, value)
+      end
+      return true
+    end
+  end
+  return nil, T("Unknown persona: %s", wanted)
 end
 
 local function update_active(nota, update)
@@ -268,18 +389,35 @@ function M.update_label(nota, label)
 end
 
 function M.update_prompt(nota, prompt)
-  local value = util.trim(prompt or "")
-  if value == "" then return nil, T("Persona instructions cannot be empty") end
+  local value = util.cut(tostring(prompt or ""), MAX_PROMPT)
+  local wanted = M.active_id(nota)
+  if wanted == CUSTOM then
+    nota.settings.set(EDITING, CUSTOM)
+    nota.settings.set(CUSTOM_PROMPT, value)
+    nota.settings.set(util.KEY_PERSONA_PROMPT, value)
+    return true
+  end
+  if wanted ~= "" then
+    local items = M.load(nota)
+    for _, item in ipairs(items) do
+      if item.id == wanted then
+        item.prompt = value
+        nota.settings.set(util.KEY_PERSONA_LABEL, item.label)
+        nota.settings.set(EDITING, item.id)
+        nota.settings.set(util.KEY_PERSONA_PROMPT, value)
+        return save(nota, items)
+      end
+    end
+  end
   if not M.active(nota) then
     local items = M.load(nota)
     local created, err = create(nota, items, T("My preset"), value)
     if not created then return nil, err end
     return true
   end
-  return update_active(nota, function(item)
-    item.prompt = util.cut(value, MAX_PROMPT)
-    return true
-  end)
+  nota.settings.set(EDITING, "")
+  nota.settings.set(util.KEY_PERSONA_PROMPT, value)
+  return true
 end
 
 return M

@@ -1,16 +1,15 @@
 {
   "host": {
-    "api": "v2.4",
+    "api": "v2.5",
     "minimum": "0.5.0-beta"
   },
   "plugins": {
-    "nota.ai": "0.1.7",
+    "nota.ai": "0.1.8",
     "nota.backlinks": "0.1.0",
     "nota.cjk-spacing": "0.1.0",
     "nota.git": "0.1.1",
     "nota.graph": "0.1.0",
     "nota.slidev": "0.1.2",
-    "nota.sheet-formulas": "0.1.0",
     "nota.stats": "0.7.0",
     "nota-md.vim": "0.1.0"
   }

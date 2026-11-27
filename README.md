@@ -35,15 +35,9 @@ capabilities declared in its `plugin.toml`.
 | CJK spacing | `nota.cjk-spacing` | 0.1.0 | Normalize configurable spaces between Chinese or Japanese text and Latin text |
 | Git | `nota.git` | 0.1.1 | Status, diffs, history and commits using system Git |
 | Knowledge graph | `nota.graph` | 0.1.0 | Explore notes and their wiki or relative Markdown links in an interactive graph ([details](plugins/graph/README.md)) |
-| Spreadsheet formulas | `nota.sheet-formulas` | 0.1.0 | Evaluate Excel-compatible formulas in ordinary GFM tables and optionally keep the computed values |
 | Slidev | `nota.slidev` | 0.1.2 | Preview the current Markdown document as slides |
 | Writing statistics | `nota.stats` | 0.7.0 | Track writing speed and long-term activity; export international-style cards with author identity, custom card copy, an optional date and a website QR code |
 | Vim keys | `nota-md.vim` | 0.1.0 | Normal/insert/visual modes, motions, operators, registers, macros, search, Ex commands, JSON profiles and vimrc-style mappings |
-
-Table-capable extensions can expose display-only content without changing the
-saved GFM source. The host mentions this state in the successful save
-notification and exposes the additive `nota.table.has_extension_content()` API
-under the existing compatible minor version.
 
 ## Install
 
@@ -88,7 +82,7 @@ capabilities = [
 Without `network.http`, `nota.http` does not exist. Without `document.write`, the extension
 cannot modify the current document.
 
-Extension API versions use `vMAJOR.MINOR`, for example `v2.4`. Minor versions are backward
+Extension API versions use `vMAJOR.MINOR`, for example `v2.5`. Minor versions are backward
 compatible and may add APIs. Major versions may contain incompatible changes. A host accepts
 extensions from the same major version whose requested minor version is not newer than the
 host API.

@@ -55,7 +55,7 @@ done < <(find plugins tools -type f \( -name '*.lua' -o -name '*.py' -o -name '*
 head_ "② 九份无头测试"
 # ⚠️ 三份都**必须在仓库根跑**（它们按脚本自己的位置算路径）。
 if [ -n "$LUA" ] || command -v podman >/dev/null 2>&1; then
-  for t in stats-state-test ai-stream-test personas-test git-panel-test graph-test backlinks-test cjk-spacing-test sheet-formulas-test; do
+  for t in stats-state-test ai-stream-test personas-test git-panel-test graph-test backlinks-test cjk-spacing-test; do
     if out=$(run_lua "tools/$t.lua" 2>&1); then
       # ⚠️ 三份的收尾行**不是同一句**（`ALL PASS（N 条断言）` / `全部通过`）
       ok "$t：$(printf '%s' "$out" | grep -E 'ALL PASS|全部通过' | tail -1)"

@@ -1,6 +1,0 @@
-name = "电子表格公式"
-description = "在普通 GFM Markdown 表格中计算兼容 Excel 的公式；只有选择“保留值”时才会改写 Markdown。"
-
-"Keep Values" = "保留值"
-"Select a table first." = "请先选择一个表格。"
-"The selected cells contain no formulas." = "所选单元格中没有公式。"

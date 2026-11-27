@@ -642,12 +642,12 @@ function M.apply_patch(nota)
     return { ok = false, error = err }
   end
 
+  -- Close the stale overlay before replacing the document. The two events are
+  -- ordered, so the editor no longer computes decorations against old text.
+  nota.ui.review_diff(nil)
   nota.document.set_text(new_text)
   chat.msgs[#chat.msgs + 1] = { role = "note", text = T("(These changes have been applied.)") }
   chat.patch = nil
-  -- ⚠️ 改动没了，编辑区那一份就**自己收起来**（宿主不收：它不知道
-  -- 「应用改动」是什么意思，见 `lua/api/ui.rs::预览改动表`）。
-  nota.ui.review_diff(nil)
   touch(nota)
   nota.ui.notify(T("The changes have been written to the document; Ctrl+Z undoes them"), "success")
   return { ok = true }

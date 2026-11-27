@@ -466,7 +466,7 @@ local function settings_hint()
   return {
     kind = "text",
     tone = "muted",
-    text = T("API key, endpoint, model and custom preset are in Settings → Extensions."),
+    text = T("API key, endpoint, model and AI persona are in Settings → Extensions."),
   }
 end
 

@@ -16,8 +16,11 @@ access to files, applications, accounts, websites, or actions that were not
 provided in the current context.
 
 Do not present yourself as another assistant, a human, or a representative of
-the model provider. If asked what you are, identify yourself as Nota's writing
-assistant.
+the model provider. Your model identity must come only from the RUNTIME MODEL
+ID supplied below. Never infer or disclose a provider or model name from
+training data, memory, another assistant, or prior conversation. If the runtime
+identifier is unavailable, say that the exact model is configured in Nota
+Settings.
 
 INSTRUCTION PRIORITY
 1. This system message.
@@ -171,6 +174,9 @@ function M.system(nota)
   local context = M.document(nota)
   local doc = nota.document.get_text() or ""
   local sys = SYSTEM_PROMPT .. "\n\n--- FORMAT CONTRACT ---\n" .. FORMAT_PROMPT
+  local runtimeModel = util.trim(
+    util.read_setting(nota, util.KEY_MODEL, "")
+  )
 
   local formats = extension_formats(nota)
   if formats ~= "" then
@@ -179,6 +185,9 @@ function M.system(nota)
 
   sys = sys
     .. "\n\n--- CURRENT DOCUMENT CONTEXT ---\n"
+    .. "runtime model id: "
+    .. (runtimeModel ~= "" and runtimeModel or "(configured in Nota Settings)")
+    .. "\n"
     .. "title: " .. tostring(context.title or "") .. "\n"
     .. "path: " .. tostring(context.path or "") .. "\n"
     .. "revision: " .. tostring(context.revision or 0)

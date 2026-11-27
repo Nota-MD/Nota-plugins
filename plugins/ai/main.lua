@@ -137,6 +137,7 @@ function M.on_load(nota)
   scope.bind_text(T)
   panel.bind_text(T)
   personas.bind_text(T)
+  personas.migrate(nota)
 
   -- ⚠️ **第三件事**：把上次那几段对话读回来（第 57 项）。
   -- 顺序要紧：**必须在 `bind_text` 之后、`register_panel` 之前**——面板第一次
@@ -170,8 +171,35 @@ function M.on_load(nota)
 
   nota.command.register("select_persona", function(args)
     local id = type(args) == "table" and args.persona or ""
-    local ok, err = personas.set_active(nota, id)
+    local ok, err = personas.select_from_settings(nota, id)
     if not ok then error(err or T("Unknown persona")) end
+    nota.ui.refresh("ai")
+  end)
+
+  nota.command.register("list_personas", function()
+    return personas.options(nota)
+  end)
+
+  nota.command.register("persona_selected", function(args)
+    local id = type(args) == "table" and args.value or ""
+    local ok, err = personas.select_from_settings(nota, id)
+    if not ok then error(err or T("Unknown persona")) end
+    nota.ui.refresh("ai")
+  end)
+
+  nota.command.register("create_persona", function(args)
+    local label = type(args) == "table" and args.label or ""
+    local result, err = personas.create_named(nota, label)
+    if not result then error(err or T("Could not create persona")) end
+    nota.ui.refresh("ai")
+    return result
+  end)
+
+  nota.command.register("rename_persona", function(args)
+    local id = type(args) == "table" and args.id or ""
+    local label = type(args) == "table" and args.label or ""
+    local ok, err = personas.rename(nota, id, label)
+    if not ok then error(err or T("Could not rename persona")) end
     nota.ui.refresh("ai")
   end)
 
@@ -183,10 +211,10 @@ function M.on_load(nota)
     nota.ui.refresh("ai")
   end)
 
-  nota.command.register("delete_persona", function()
-    local active = personas.active_id(nota)
-    if active == "" then return end
-    local ok, err = personas.remove(nota, active)
+  nota.command.register("delete_persona", function(args)
+    local id = type(args) == "table" and args.id or personas.active_id(nota)
+    if id == "" then return end
+    local ok, err = personas.remove(nota, id)
     if not ok then error(err or T("Could not delete persona")) end
     nota.ui.refresh("ai")
   end)
@@ -278,7 +306,11 @@ function M.on_load(nota)
   --- 调它，就等于绕过了那道确认。所以它只有一处调用者：`panel.lua` 里那两颗
   --- 按钮（`kind = "buttons"`），外加编辑区那份预览上的「应用改动」。
   nota.command.register("apply_patch", function()
-    return chat.apply_patch(nota)
+    local result = chat.apply_patch(nota)
+    if not result.ok then
+      error(result.error or T("Could not apply the changes"))
+    end
+    return result
   end)
 
   --- 丢掉待应用的改动（**不动文档**）。

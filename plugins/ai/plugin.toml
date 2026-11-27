@@ -16,8 +16,8 @@
 [plugin]
 id          = "nota.ai"
 name        = "AI assistant"
-version     = "0.1.7"
-api         = "v2.4"
+version     = "0.1.8"
+api         = "v2.5"
 
 description = "Writing assistant: polish, continue, summarize, translate. Bring your own API key."
 license     = "BSD-2-Clause"
@@ -91,6 +91,27 @@ placeholder = "sk-…"
 secret      = true
 
 [[settings]]
+key             = "persona_active"
+kind            = "select"
+label           = "AI persona"
+help            = "Choose the persona used for this document's conversations."
+default_text    = ""
+options_command = "list_personas"
+change_command  = "persona_selected"
+create_command  = "create_persona"
+rename_command  = "rename_persona"
+delete_command  = "delete_persona"
+
+[[settings]]
+key          = "persona_prompt"
+kind         = "text"
+label        = "Persona instructions"
+help         = "Edit the selected persona. Switching persona saves this text before loading the next one."
+placeholder  = "Describe role, audience, tone and terminology…"
+default_text = ""
+multiline    = true
+
+[[settings]]
 key     = "scope_chars"
 kind    = "range"
 label   = "Characters the AI may read"
@@ -106,20 +127,3 @@ kind       = "toggle"
 label      = "Stream output"
 help       = "Show text as the model generates it. Nota falls back to a normal response when an endpoint ignores or rejects streaming."
 default_on = true
-
-[[settings]]
-key          = "persona_label"
-kind         = "text"
-label        = "Preset name"
-help         = "A short name for the custom writing preset."
-placeholder  = "My preset"
-default_text = ""
-
-[[settings]]
-key          = "persona_prompt"
-kind         = "text"
-label        = "Custom preset instructions"
-help         = "Optional system instructions for role, audience, tone and terminology. Leave empty to use the built-in assistant."
-placeholder  = "Write custom instructions…"
-default_text = ""
-multiline    = true
